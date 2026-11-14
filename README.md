@@ -82,7 +82,8 @@ npm start
 
 ## Aplicações relacionadas
 
-- [My Delivery — customer app](https://my-delivery-silk.vercel.app)
-- [My Delivery Provider — store dashboard](https://my-delivery-provider.vercel.app)
-- [SaaS Dashboard](https://dashboard-project-nu-one.vercel.app/)
-- [Portfolio](https://portfolio-vtu0.onrender.com)
+- [Meu Delivery — Aplicativo para o cliente](https://meu-delivery-eight.vercel.app/)
+- [Meu Delivery Provedor — Painel da loja](https://meu-delivery-provedor.vercel.app/)
+- [SaaS Dashboard — Painel SaaS](https://saa-s-dashboard-eta.vercel.app/)
+- [Meu Delivery Server — Documentação da API](https://meu-delivery-server-tau.vercel.app/api-docs/)
+- [Portfolio](https://meu-porfolio-two.vercel.app/)
