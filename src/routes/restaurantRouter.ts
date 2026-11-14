@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { replicateUpload, uploadLocal } from "../config/duplicateUpload";
-import { uploadSignupImage, replicatedSignupUpload } from "../config/singupImage";
+//import { uploadSignupImage, replicatedSignupUpload } from "../config/singupImage";
 import RestaurantController from "../controller/RestaurantController";
 import RestaurantBusiness from "../business/RestaurantBusiness";
 import RestaurantData from "../data/RestaurantData";
