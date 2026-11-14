@@ -1,0 +1,332 @@
+import Order from "../model/Order"
+import OrderData from "../data/OrderData"
+import Services, { AppError } from "../services/Authentication"
+//import moment from "moment-timezone"
+import ProviderNotificationData from "../data/ProviderNotificationData"
+import { OrderModel, UserModel, OrdersByMonthModel } from "../model/typesAndInterfaces"
+import axios from "axios"
+import { config } from "dotenv"
+import { randomUUID as uuidv4 } from "crypto"
+import StockConflictError from "../errors/StockConflictError"
+
+
+config()
+
+
+
+export interface CreateOrderDTO{
+    product: string
+    price: number
+    quantity: number
+    momentString: string
+    photoUrl: string
+    description: string
+    providerId: string
+    productId:string
+
+}
+
+export interface PaymentDTO {
+    paymentMethodId: string
+    email: string
+    items: Array<{ unit_price: number, quantity: number }>
+}
+
+
+
+export default class OrderBusiness{
+    constructor(
+        private orderData:OrderData,
+        private services:Services
+    ){}
+
+    public createOrder = async(user:UserModel, orderDataDTO:CreateOrderDTO):Promise<void>=>{
+        const { product, price, quantity, photoUrl, description, providerId, productId } = orderDataDTO
+
+        if (!product || !price) {
+            throw new AppError(400, "Campos obrigatórios do pedido ausentes");
+        }
+
+        if(!Number.isInteger(quantity) || quantity <= 0){
+            throw new AppError(400, 'A quantidade deve ser um número inteiro maior que zero')
+        }
+        
+        const address = `${user.street} ${user.number}, ${user.neighbourhood} ${user.city} - ${user.state}`
+        const id = this.services.idGenerator()
+        const existingOrder = await this.orderData.findRequestedOrder(product, price, description, user.id)
+        if(existingOrder){
+            throw new AppError(403, `Vodê já fez o pedido para '${product}'. Gostaria de verificar?`)
+        }
+
+        const order = new Order(
+            id, 
+            product, 
+            price, 
+            photoUrl, 
+            quantity,
+            quantity * price,
+            new Date(),
+            user.id,
+            'REQUESTED',
+            address,
+            description,
+            providerId,
+            productId
+        )
+
+        try{
+            await this.orderData.createOrder(order, productId, providerId, quantity)
+        }catch(e){
+            if(e instanceof StockConflictError){
+                throw new AppError(409, e.message)
+            }
+            throw e
+        }
+
+        try{
+            await new ProviderNotificationData().saveProviderNofitication(
+                `Novo pedido de ${product}`,
+                providerId
+            )
+        }catch(e:unknown){
+            console.error(
+                `Pedido ${id} foi criado, mas a notificação ao fornecedor ${providerId} falhou: ${e}`
+            )
+        }
+    }
+    
+
+    public getOrderById = async(orderId:string):Promise<OrderModel>=>{
+        const order = await this.orderData.findOrderById(orderId)
+        if(!order){
+            throw new AppError(404, 'Pedido não encontrado')
+        }
+       
+        return order
+    }
+
+   
+    public deleteOrder = async (orderId: string): Promise<void> => {
+        const order = await this.orderData.findOrderById(orderId)
+        if(!order){
+            throw new AppError(404, 'Pedido não encontrado')
+        }
+
+        await this.orderData.deleteOrder(order);
+    }
+
+
+    public clearOrderHistory = async (userId: string): Promise<void> => {
+        const finishedOrders = await this.orderData.findFinishedOrdersByClient(userId);
+        if (finishedOrders.length === 0) {
+            throw new AppError(404, "Seu histórico de pedidos já está vazio");
+        }
+        await this.orderData.deleteFinishedOrdersByClient(userId);
+    }
+
+
+    // public clearRequestedOrders = async (userId: string, orderId: string): Promise<void> => {
+    //     await this.orderData.deleteRequestedOrdersByProvider(userId, orderId);
+    // }
+
+
+    public updateOrderQuantity = async (orderId: string, quantity: number): Promise<void> => {
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+            throw new AppError(400, "A quantidade deve ser um número inteiro maior que zero");
+        }
+
+        try{
+            await this.orderData.updateOrderQuantity(quantity, orderId)
+        }catch(e){
+            if(e instanceof StockConflictError){
+                throw new AppError(409, e.message)
+            }
+
+            throw e
+        }
+    }
+
+
+    public finishAllOrdersByClient = async(userId:string):Promise<void>=>{
+        const activeOrders = await this.orderData.findActiveOrdersByClient(userId)
+        if(activeOrders.length === 0){
+            throw new AppError(400, 'Todos os pedidos já foram finalizados ou não existem')
+        }
+        await this.orderData.finishAllOrdersByClient(userId)
+    }
+
+
+    public markOrderAsFinished = async(orderId:string):Promise<void>=>{
+        const order = await this.orderData.findOrderById(orderId)
+        if(!order){
+            throw new AppError(404, 'Pedido não encontrado')
+        }
+        await this.orderData.updateOrderStatusToFinished(orderId)
+    }
+
+
+    public revertOrderToRequested = async(orderId:string):Promise<void>=>{
+        const order = await this.orderData.findOrderById(orderId)
+        if(!order){
+            throw new AppError(404, 'Pedido não encontrado')
+        }
+        await this.orderData.updateOrderStatusToRequested(orderId)
+    }
+
+
+    /* private removeExpiredOrders = async(orders:OrderModel[]):Promise<void>=>{
+        const startOfToday = moment().tz('America/Sao_Paulo').startOf('day')
+
+        for(const order of orders){
+            const orderDate = moment.tz(
+                order.moment,
+                'DD/MM/YYYY [at] HH:mm',
+                'America/Sao_Paulo'
+            ).startOf('day')
+
+            if(orderDate.isBefore(startOfToday)){
+                await this.orderData.deleteOrder(order.id)
+            }
+        }
+    } */
+
+    
+    public getActiveOrders = async(userId:string):Promise<OrderModel[]>=>{
+        const orders = await this.orderData.findActiveOrdersByClient(userId)
+        if(orders.length === 0){
+            throw new AppError(404, "Você ainda não fez nenhum pedido ativo")
+        }
+        //await this.removeExpiredOrders(orders)
+        return orders
+    }
+
+
+    public getAllOrders = async(providerId:string):Promise<OrderModel[]>=>{
+        const orders = await this.orderData.findAllOrders(providerId)
+        //await this.removeExpiredOrders(orders)
+        
+        if(orders.length === 0){
+            throw new AppError(404, 'Lista de pedidos está vazia')
+        } 
+
+        return orders
+    }
+
+
+    public getRecentOrders = async(providerId:string):Promise<OrderModel[]>=>{
+        const recentOrders = await this.orderData.findRecentOrders(providerId)
+        //await this.removeExpiredOrders(orders)
+        
+        if(recentOrders.length === 0){
+            throw new AppError(404, 'Lista de pedidos recentes está vazia')
+        } 
+
+        return recentOrders
+    }
+
+
+    public ordersByMonth = async(providerId:string):Promise<OrdersByMonthModel[]>=>{
+        const findOrdersByMonth = await this.orderData.findOrdersByMonth(providerId)
+        //await this.removeExpiredOrders(orders)
+        
+        if(findOrdersByMonth.length === 0){
+            throw new AppError(404, 'Lista de pedidos por mês está vazia')
+        } 
+
+        return findOrdersByMonth
+    }
+
+
+    public getActiveOrdersByUserId = async(userId:string, providerId:string):Promise<OrderModel[]>=>{
+        const orders = await this.orderData.findAllOrdersByClient(userId, providerId)
+        if(orders.length === 0){
+            throw new AppError(404, 'Nenhum pedido ativo encontrado para este usuário')
+        }
+        return orders
+    }
+
+
+    public getFinishedOrders = async(userId:string):Promise<OrderModel[]>=>{
+        const orders = await this.orderData.findFinishedOrdersByClient(userId)
+        if(orders.length === 0){
+            throw new AppError(404, 'Nenhum pedido finalizado encontrado em seu histórico')
+        }
+        //await this.removeExpiredOrders(orders)
+        return orders
+    } 
+    
+    
+    public processPayment = async(paymentDTO:PaymentDTO):Promise<any>=>{
+        try{
+            const { paymentMethodId, email, items } = paymentDTO
+            const orderId = `${email}-${Date.now()}`
+            const totalAmount = items.reduce(
+                (acc: number, item: any) => acc + (item.unit_price * item.quantity),
+                0
+            )
+            
+            const payload:any = {
+                transaction_amount: Number(totalAmount.toFixed(2)),
+                description: 'In-app Purchase',
+                payment_method_id: paymentMethodId,
+                payer: {
+                    email: email,
+                    first_name: 'Customer',
+                    last_name: 'Test',
+                    identification: {
+                        type: 'CPF',
+                        number: '19119119100'
+                    }
+                },
+                external_reference: orderId
+            }
+
+
+            if(['visa', 'master', 'amex'].includes(paymentMethodId)){
+                payload.installments = 1
+            }
+
+            const response = await axios.post(
+                'https://api.mercadopago.com/v1/payments',
+                payload,
+                {
+                    headers: {
+                        Authorization: `Bearer ${process.env.ACCESS_TOKEN?.trim()}`,
+                        'X-Idempotency-Key': uuidv4()
+                    }
+                }
+            )
+
+            return response.data
+        }catch(e:any){
+            if(axios.isAxiosError(e)){
+                throw new AppError(
+                    e.response?.status || 500,
+                    e.response?.data?.message || 'Payment processing failed'
+                )
+            }
+
+            throw new AppError(500, e.message || 'Internal server error while processing payment')
+        }     
+    }
+    
+    
+    public getPaymentStatus = async(paymentId:string):Promise<string>=>{
+        try{
+            
+            const response = await axios.get(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                headers: { Authorization: `Bearer ${process.env.ACCESS_TOKEN}` }
+            })
+
+            return response.data.status                      
+        }catch(e:any){
+            if(axios.isAxiosError(e)){
+                throw new AppError(
+                    e.response?.status || 500,
+                    'Unable to retrieve payment status'
+                )
+            }
+            throw new AppError(500, e.message || 'Failed to fetch payment status')
+        }
+    }
+}

@@ -1,0 +1,273 @@
+import { Router } from "express";
+import { replicateUpload, uploadLocal } from "../config/duplicateUpload";
+import { uploadSignupImage, replicatedSignupUpload } from "../config/singupImage";
+import RestaurantController from "../controller/RestaurantController";
+import RestaurantBusiness from "../business/RestaurantBusiness";
+import RestaurantData from "../data/RestaurantData";
+import Services from "../services/Authentication";
+import TokenService from "../services/TokenService";
+import EmailService from "../services/EmailService";
+import { requireSignupEnabled, requireDeleteAccountEnabled } from "../middleware/signupGate";
+
+export const restaurantRouter = Router();
+
+// Instantiating dependencies
+const services = new Services();
+const tokenService = new TokenService()
+const emailService = new EmailService()
+const restaurantData = new RestaurantData();
+const restaurantBusiness = new RestaurantBusiness(restaurantData, services, tokenService, emailService);
+const restaurantController = new RestaurantController(restaurantBusiness, services);
+
+// ==========================================
+// Merchant Restaurant Authentication & Profile
+// ==========================================
+
+restaurantRouter.post("/signup", /* uploadSignupImage.single('image'), replicatedSignupUpload, */requireSignupEnabled("ENABLE_PROVIDER_SIGNUP"), restaurantController.signupRestaurant);
+
+/**
+ * @openapi
+ * /providers/login:
+ *   post:
+ *     summary: Authenticate merchant & issue JWT token
+ *     tags:
+ *       - Restaurants
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: admin1@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Login successful. Returns raw Merchant JWT token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *       400:
+ *         description: Missing email or password.
+ *       401:
+ *         description: Invalid merchant credentials.
+ */
+restaurantRouter.post("/login", restaurantController.loginRestaurant);
+restaurantRouter.post("/password/reset-request", restaurantController.requestPasswordReset);
+
+/**
+ * @openapi
+ * /providers/profile:
+ *   get:
+ *     summary: Fetch authenticated merchant restaurant details
+ *     tags:
+ *       - Restaurants
+ *     security:
+ *       - MerchantAuth: []
+ *     responses:
+ *       200:
+ *         description: Merchant profile data retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   example: "b92f4c31-2f34-5d67-9b01-234567890def"
+ *                 name:
+ *                   type: string
+ *                   example: Livri
+ *                 email:
+ *                   type: string
+ *                   example: admin1@example.com
+ *                 phone:
+ *                   type: string
+ *                   example: "71999887766"
+ *                 address:
+ *                   type: string
+ *                   example: Largo do Pelourinho
+ *                 description:
+ *                   type: string
+ *                   example: Literary books in your hands and in your home.
+ *                 logourl:
+ *                   type: string
+ *                   nullable: true
+ *                   example: https://res.cloudinary.com/demo/image/upload/v1/logo.png
+ *       401:
+ *         description: Unauthorized - Merchant token missing or invalid.
+ *       404:
+ *         description: Restaurant not found.
+ */
+restaurantRouter.get("/profile", restaurantController.getRestaurantById);
+restaurantRouter.get("/restaurant/:id", restaurantController.getRestaurantByCustomer);
+
+
+restaurantRouter.get("/", restaurantController.getRestaurants);
+
+// ==========================================
+// Product Catalog & Management Operations
+// ==========================================
+
+/**
+ * @openapi
+ * /providers/products:
+ *   get:
+ *     summary: Fetch all products list for the authenticated merchant
+ *     tags:
+ *       - Restaurants
+ *     security:
+ *       - MerchantAuth: []
+ *     responses:
+ *       200:
+ *         description: List of products belonging to the merchant retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     example: "p1234567-89ab-cdef-0123-456789abcdef"
+ *                   name:
+ *                     type: string
+ *                     example: Lord of the Rings
+ *                   price:
+ *                     type: number
+ *                     example: 190.00
+ *                   category:
+ *                     type: string
+ *                     example: Fantasy
+ *                   description:
+ *                     type: string
+ *                     example: Published in 1954–1955.
+ *                   photoUrl:
+ *                     type: string
+ *                     example: https://res.cloudinary.com/demo/image/upload/v1/burger.jpg
+ *                   provider:
+ *                     type: string
+ *                     example: "b92f4c31-2f34-5d67-9b01-234567890def"
+ *       401:
+ *         description: Unauthorized - Merchant token missing or invalid.
+ *       404:
+ *         description: Menu is empty.
+ */
+restaurantRouter.get("/products", restaurantController.getAllProducts);
+restaurantRouter.get("/clientside-products/:id", restaurantController.aAllProductsByClientSide);
+
+/**
+ * @openapi
+ * /providers/product/{id}:
+ *   get:
+ *     summary: Fetch a specific product by ID
+ *     tags:
+ *       - Restaurants
+ *     security:
+ *       - MerchantAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Product UUID
+ *     responses:
+ *       200:
+ *         description: Product details retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                   example: "p1234567-89ab-cdef-0123-456789abcdef"
+ *                 name:
+ *                   type: string
+ *                   example: Lord of the Rings
+ *                 price:
+ *                   type: number
+ *                   example: 190.00
+ *                 category:
+ *                   type: string
+ *                   example: Fantasy
+ *                 description:
+ *                   type: string
+ *                   example: Published in 1954–1955.
+ *                 photoUrl:
+ *                   type: string
+ *                   example: https://res.cloudinary.com/demo/image/upload/v1/burger.jpg
+ *                 provider:
+ *                   type: string
+ *                   example: "b92f4c31-2f34-5d67-9b01-234567890def"
+ *       401:
+ *         description: Unauthorized - Merchant token missing or invalid.
+ *       404:
+ *         description: Product not found.
+ */
+restaurantRouter.get("/product/:id", restaurantController.getProductById);
+restaurantRouter.post("/product", uploadLocal.single('image'), replicateUpload, restaurantController.insertProduct);
+restaurantRouter.put("/product/:id", uploadLocal.single('image'), replicateUpload, restaurantController.updateProduct);
+
+/**
+ * @openapi
+ * /providers/update:
+ *   put:
+ *     summary: Update merchant basic profile details
+ *     tags:
+ *       - Restaurants
+ *     security:
+ *       - MerchantAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - phone
+ *               - address
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Livri
+ *               phone:
+ *                 type: string
+ *                 example: "71999887766"
+ *               address:
+ *                 type: string
+ *                 example: Largo do Pelourinho
+ *     responses:
+ *       200:
+ *         description: Mercahnt profile updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Merchant data updated successfully
+ *       400:
+ *         description: Missing required profile fields.
+ *       401:
+ *         description: Unauthorized - Merchant token missing or invalid.
+ */
+restaurantRouter.put("/update", restaurantController.updateRestaurant);
+restaurantRouter.patch("/password/update", restaurantController.updatePassword);
+restaurantRouter.delete("/product/:id", restaurantController.deleteProduct);
+restaurantRouter.delete("/account", requireDeleteAccountEnabled("ENABLE_PROVIDER_DELETE"), restaurantController.deleteRestaurantAccount);

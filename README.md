@@ -1,0 +1,88 @@
+# Meu Delivery Server
+
+A API REST central para o ecossistema Meu Delivery. O servidor conecta o aplicativo do cliente, o painel da loja e o painel SaaS, compartilhando dados de autenticação, informações sobre lojas e produtos, pedidos, notificações e estatísticas.
+
+## O ecossistema Meu Delivery
+
+- **Meu Delivery** — O aplicativo para o cliente navegar por lojas, fazer pedidos e acompanhar o fluxo de compra.
+- **Meu Delivery Provedor** — O aplicativo voltado para o estabelecimento, destinado ao recebimento e gerenciamento de pedidos, bem como à manutenção de produtos e detalhes da loja.
+- **SaaS Dashboard** — o painel de gerenciamento e monitoramento do ecossistema.
+- **Meu Delivery Server** — a camada de API e integração entre as aplicações e serviços externos.
+
+Os aplicativos web enviam suas solicitações a esta API. O servidor valida a autenticação, aplica regras de negócio e lê ou atualiza dados compartilhados, permitindo que as lojas processem os pedidos dos clientes.
+
+## Funcionalidades da API
+
+- Cadastro de clientes e lojas, autenticação, perfis, endereços e recuperação de senha.
+- Descoberta e gerenciamento de lojas, categorias e produtos, incluindo imagens e estoque.
+- Criação e consulta de pedidos, atualizações de status e verificação do status de pagamento.
+- Integração com o Mercado Pago para processamento de pagamentos e verificação de status.
+- Notificações para clientes e lojas, incluindo o gerenciamento do status de leitura.
+- Endpoints para estatísticas e receita.
+- Documentação interativa de endpoints utilizando Swagger/OpenAPI.
+
+## Tecnologias utilizadas
+
+- Node.js, Express 5, and TypeScript
+- Knex.js with PostgreSQL (`pg`)
+- JWT and bcryptjs for authentication and password hashing
+- Multer for uploads, with Cloudinary as an optional image storage provider
+- Nodemailer for password recovery emails
+- Swagger UI and `swagger-jsdoc` for API documentation
+
+## Documentação da API
+
+- [Documentação Swagger em ambiente de produção](https://my-delivery-server-nine.vercel.app/api-docs/)
+- Servidor local: `http://localhost:3003/api-docs/`
+
+O caminho raiz `/` redireciona para a documentação da API.
+
+## Executar localmente
+
+Requer Node.js, npm e acesso a uma instância do PostgreSQL. A partir do diretório deste projeto:
+
+```bash
+npm install
+```
+
+Crie um arquivo `.env` na raiz do projeto e configure a conexão com o banco de dados e as definições da aplicação:
+
+```env
+PORT=3003
+NODE_ENV=development
+MYDELIVERY_DB=postgresql://user:password@localhost:5432/mydelivery
+JWT_KEY=your_local_secret_key
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:5174
+UPLOAD_DRIVER=local
+```
+
+`ALLOWED_ORIGINS` aceita uma lista de origens separadas por vírgula. `UPLOAD_DRIVER` deve ser definido como `local` ou `cloudinary`. Para utilizar o Cloudinary, configure também `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET`.
+
+O serviço de recuperação de senha utiliza `ETHEREAL_USER` e `ETHEREAL_PASSWORD`, juntamente com `CUSTOMER_CLIENT_URL` e `PROVIDER_CLIENT_URL`, para montar os links enviados aos aplicativos.
+
+Para criar eventuais tabelas ausentes no banco de dados configurado, execute:
+
+```bash
+npm run migrations
+```
+
+Inicie o servidor de desenvolvimento:
+
+```bash
+npm run dev
+```
+
+Comando adicional:
+
+```bash
+npm start
+```
+
+`npm start` compila o TypeScript e inicia o aplicativo. Durante o desenvolvimento, `npm run dev` executa o ponto de entrada TypeScript com Nodemon.
+
+## Aplicações relacionadas
+
+- [My Delivery — customer app](https://my-delivery-silk.vercel.app)
+- [My Delivery Provider — store dashboard](https://my-delivery-provider.vercel.app)
+- [SaaS Dashboard](https://dashboard-project-nu-one.vercel.app/)
+- [Portfolio](https://portfolio-vtu0.onrender.com)
