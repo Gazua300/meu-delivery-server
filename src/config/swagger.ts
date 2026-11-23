@@ -7,26 +7,26 @@ const options: swaggerJsdoc.Options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'My Delivery API Server',
+            title: 'Meu Delivery API Server',
             version: '1.0.0',
             description: [
-    'Central API service powering the My Delivery Consumer App, Merchant Provider, and SaaS Dashboard.',
+    'Serviço central de API que alimenta Meu Delivery, Meu Delivery Provedor e SaaS Dashboard.',
     '',
-    '> **⚠️ Note:** This is a demo/portfolio project. Some routes (such as \`DELETE\` and \`signup\`) were intentionally omitted or restricted, since they would allow creating or deleting real users/data in a publicly accessible demo environment'
+    '> **⚠️ Observação:** Este é um projeto de demonstração/portfólio. Algumas rotas (como `DELETE` e `signup`) foram intencionalmente omitidas ou restritas, pois permitiriam criar ou excluir usuários e dados reais em um ambiente público de demonstração.'
             ].join('\n'),
             contact: {
                 name: 'Flamarion França',
-                url: 'https://portfolio-vtu0.onrender.com'
+                url: 'https://meu-porfolio-two.vercel.app/'
             },            
         },
         servers: [
             {
-                url: 'https://my-delivery-server-nine.vercel.app/',
-                description: 'Production server'
+                url: 'https://meu-delivery-server-tau.vercel.app/',
+                description: 'Servidor de produção'
             },
             {
                 url: 'http://localhost:3003',
-                description: 'Local development server'
+                description: 'Servidor local de desenvolvimento'
             }
         ],
         components: {
@@ -35,13 +35,13 @@ const options: swaggerJsdoc.Options = {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    description: 'Enter your Customer Bearer JWT token without quotes.'
+                    description: 'Insira seu token JWT (do tipo Bearer) de cliente, sem aspas.'
                 },
                 MerchantAuth: {
                     type: 'http',
                     scheme: 'bearer',
                     bearerFormat: 'JWT',
-                    description: 'Enter your Merchant Bearer JWT token without quotes.'
+                    description: 'Insira seu token JWT Bearer de estabelecimento, sem aspas.'
                 }
             }
         }

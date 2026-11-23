@@ -33,7 +33,7 @@ Os aplicativos web enviam suas solicitações a esta API. O servidor valida a au
 
 ## Documentação da API
 
-- [Documentação Swagger em ambiente de produção](https://my-delivery-server-nine.vercel.app/api-docs/)
+- [Documentação Swagger em ambiente de produção](https://meu-delivery-server-tau.vercel.app/api-docs/)
 - Servidor local: `http://localhost:3003/api-docs/`
 
 O caminho raiz `/` redireciona para a documentação da API.

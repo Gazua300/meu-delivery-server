@@ -24,14 +24,14 @@ orderRouter.post("/", orderController.createOrder);
  * @openapi
  * /orders/active:
  *   get:
- *     summary: Fetch active (REQUESTED) orders for the customer
+ *     summary: Buscar os pedidos ativos solicitados pelo cliente
  *     tags:
- *       - Orders
+ *       - Pedidos
  *     security:
  *       - CustomAuth: []
  *     responses:
  *       200:
- *         description: List of active orders.
+ *         description: Lista de pedidos ativos.
  *         content:
  *           application/json:
  *             schema:
@@ -39,9 +39,9 @@ orderRouter.post("/", orderController.createOrder);
  *               items:
  *                 $ref: '#/components/schemas/Order'
  *       401:
- *         description: Unauthorized.
+ *         description: Não autorizado.
  *       404:
- *         description: You haven't placed any active orders yet.
+ *         description: Você ainda não realizou nenhum pedido ativo.
  */
 orderRouter.get("/active", orderController.getActiveOrders);
 orderRouter.get("/history", orderController.getFinishedOrders);
@@ -50,14 +50,14 @@ orderRouter.get("/history", orderController.getFinishedOrders);
  * @openapi
  * /orders/all:
  *   get:
- *     summary: Fetch all orders for the authenticated merchant
+ *     summary: Buscar todos os pedidos do estabelecimento autenticado
  *     tags:
- *       - Orders
+ *       - Pedidos
  *     security:
  *       - MerchantAuth: []
  *     responses:
  *       200:
- *         description: List of merchant orders.
+ *         description: Lista de pedidos do estabelecimento.
  *         content:
  *           application/json:
  *             schema:
@@ -65,9 +65,9 @@ orderRouter.get("/history", orderController.getFinishedOrders);
  *               items:
  *                 $ref: '#/components/schemas/Order'
  *       401:
- *         description: Unauthorized - Merchant token missing or invalid.
+ *         description: Não autorizado - Token do estabelecimento ausente ou inválido.
  *       404:
- *         description: Order list is empty.
+ *         description: A lista de pedidos está vazia.
  */
 orderRouter.get("/all", orderController.getAllOrders);
 orderRouter.get("/archived", orderController.getArchivedOrders);
@@ -80,9 +80,9 @@ orderRouter.get("/user/:id", orderController.getActiveOrdersByUserId);
  * @openapi
  * /orders/{id}:
  *   get:
- *     summary: Fetch specific order details by ID
+ *     summary: Buscar os dados de um pedido específico pelo ID
  *     tags:
- *       - Orders
+ *       - Pedidos
  *     security:
  *       - UserAuth: []
  *     parameters:
@@ -91,16 +91,16 @@ orderRouter.get("/user/:id", orderController.getActiveOrdersByUserId);
  *         required: true
  *         schema:
  *           type: string
- *         description: Order UUID
+ *         description: UUID do pedido
  *     responses:
  *       200:
- *         description: Order details retrieved.
+ *         description: Dados do pedido obtidos com sucesso.
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Order'
  *       404:
- *         description: Order not found.
+ *         description: Pedido não encontrado.
  */
 orderRouter.get("/:id", orderController.getOrderById);
 
@@ -110,16 +110,16 @@ orderRouter.get("/:id", orderController.getOrderById);
  * @openapi
  * /orders/{id}/quantity:
  *   patch:
- *     summary: Update the item quantity for an order
+ *     summary: Atualizar a quantidade de itens de um pedido
  *     tags:
- *       - Orders
+ *       - Pedidos
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         description: Order UUID
+ *         description: UUID do pedido
  *     requestBody:
  *       required: true
  *       content:
@@ -135,7 +135,7 @@ orderRouter.get("/:id", orderController.getOrderById);
  *                 example: 3
  *     responses:
  *       200:
- *         description: Quantity updated successfully.
+ *         description: Quantidade atualizada com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -143,18 +143,18 @@ orderRouter.get("/:id", orderController.getOrderById);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Order quantity updated successfully.
+ *                   example: Quantidade do pedido atualizada com sucesso.
  *       400:
- *         description: Invalid quantity value.
+ *         description: Valor de quantidade inválido.
  */
 orderRouter.patch("/:id/quantity", orderController.updateOrderQuantity);
 /**
  * @openapi
  * /orders/{id}/finish:
  *   patch:
- *     summary: Mark order status as finished (Merchant)
+ *     summary: Marcar o pedido como concluído pelo estabelecimento
  *     tags:
- *       - Orders
+ *       - Pedidos
  *     security:
  *       - MerchantAuth: []
  *     parameters:
@@ -163,10 +163,10 @@ orderRouter.patch("/:id/quantity", orderController.updateOrderQuantity);
  *         required: true
  *         schema:
  *           type: string
- *         description: Order UUID
+ *         description: UUID do pedido
  *     responses:
  *       200:
- *         description: Order marked as finished.
+ *         description: Pedido marcado como concluído.
  *         content:
  *           application/json:
  *             schema:
@@ -174,11 +174,11 @@ orderRouter.patch("/:id/quantity", orderController.updateOrderQuantity);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Order status updated to finished.
+ *                   example: Status do pedido atualizado para concluído.
  *       401:
- *         description: Unauthorized.
+ *         description: Não autorizado.
  *       404:
- *         description: Order not found.
+ *         description: Pedido não encontrado.
  */
 orderRouter.patch("/:id/finish", orderController.markOrderAsFinished);
 
@@ -186,9 +186,9 @@ orderRouter.patch("/:id/finish", orderController.markOrderAsFinished);
  * @openapi
  * /orders/{id}/revert:
  *   patch:
- *     summary: Revert order status back to requested (Merchant)
+ *     summary: Reverter o status do pedido para solicitado pelo estabelecimento
  *     tags:
- *       - Orders
+ *       - Pedidos
  *     security:
  *       - MerchantAuth: []
  *     parameters:
@@ -197,10 +197,10 @@ orderRouter.patch("/:id/finish", orderController.markOrderAsFinished);
  *         required: true
  *         schema:
  *           type: string
- *         description: Order UUID
+ *         description: UUID do pedido
  *     responses:
  *       200:
- *         description: Order status reverted.
+ *         description: Status do pedido revertido.
  *         content:
  *           application/json:
  *             schema:
@@ -208,11 +208,11 @@ orderRouter.patch("/:id/finish", orderController.markOrderAsFinished);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Order status reverted to requested.
+ *                   example: Status do pedido revertido para solicitado.
  *       401:
- *         description: Unauthorized.
+ *         description: Não autorizado.
  *       404:
- *         description: Order not found.
+ *         description: Pedido não encontrado.
  */
 orderRouter.patch("/:id/revert", orderController.revertOrderToRequested);
 

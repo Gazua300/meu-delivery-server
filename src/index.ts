@@ -21,7 +21,7 @@ const swaggerUiOptions:swaggerUi.SwaggerUiOptions = {
         `${CDN_BASE}/swagger-ui-bundle.min.js`,
         `${CDN_BASE}/swagger-ui-standalone-preset.min.js`,
     ],
-    customSiteTitle: 'My Delivery API Documentation',
+    customSiteTitle: 'Documentação da API Meu Delivery',
     customCss: `
         body, .swagger-ui {
             background-color: #1b1b1b !important;

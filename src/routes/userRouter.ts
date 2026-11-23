@@ -26,9 +26,9 @@ userRouter.post("/signup", requireSignupEnabled("ENABLE_CUSTOMER_SIGNUP"), userC
  * @openapi
  * /users/login:
  *   post:
- *     summary: Authenticate client & issue JWT token
+ *     summary: Autenticar cliente e emitir token JWT
  *     tags:
- *       - Users
+ *       - Usuários
  *     requestBody:
  *       required: true
  *       content:
@@ -49,16 +49,16 @@ userRouter.post("/signup", requireSignupEnabled("ENABLE_CUSTOMER_SIGNUP"), userC
  *                 example: password123
  *     responses:
  *       200:
- *         description: Login successful. Returns raw JWT token string.
+ *         description: Login realizado com sucesso. Retorna a string do token JWT bruto.
  *         content:
  *           application/json:
  *             schema:
  *               type: string
  *               example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       400:
- *         description: Missing fields or invalid email format.
+ *         description: Campos ausentes ou formato de e-mail inválido.
  *       401:
- *         description: Invalid email or password.
+ *         description: Senha ou e-mail inválidos.
  */
 userRouter.post("/login", userController.login);
 
@@ -73,14 +73,14 @@ userRouter.post("/password/reset-request", userController.requestPasswordReset);
  * @openapi
  * /users:
  *   get:
- *     summary: Retrieve all customers who placed orders with the authenticated merchant.
+ *     summary: Buscar todos os clientes que fizeram pedidos com o estabelecimento autenticado
  *     tags:
- *       - Users
+ *       - Usuários
  *     security:
  *       - MerchantAuth: []
  *     responses:
  *       200:
- *         description: List of customers associated with the merchant retrieved.
+ *         description: Lista de clientes associados ao estabelecimento obtida com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -101,9 +101,9 @@ userRouter.post("/password/reset-request", userController.requestPasswordReset);
  *                     type: string
  *                     example: "71998887766"
  *       401:
- *         description: Unauthorized - Merchant token required.
+ *         description: Não autorizado - Token do estabelecimento obrigatório.
  *       404:
- *         description: Users profile not found.
+ *         description: Perfil dos usuários não encontrado.
  */
 userRouter.get("/", userController.getAllUsers);
 
@@ -111,14 +111,14 @@ userRouter.get("/", userController.getAllUsers);
  * @openapi
  * /users/profile:
  *   get:
- *     summary: Fetch authenticated client's profile details
+ *     summary: Buscar os dados do perfil do cliente autenticado
  *     tags:
- *       - Users
+ *       - Usuários
  *     security:
  *       - CustomAuth: []
  *     responses:
  *       200:
- *         description: Client profile data retrieved successfully.
+ *         description: Dados do perfil do cliente obtidos com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -165,9 +165,9 @@ userRouter.get("/", userController.getAllUsers);
  *                   nullable: true
  *                   example: "Apt 201"
  *       401:
- *         description: Unauthorized - Invalid or missing token.
+ *         description: Não autorizado - Token inválido ou ausente.
  *       404:
- *         description: User profile not found.
+ *         description: Perfil do usuário não encontrado.
  */
 userRouter.get("/profile", userController.getProfile);
 
@@ -178,9 +178,9 @@ userRouter.get("/profile/:id", userController.getProfileByUser);
  * @openapi
  * /users/profile:
  *   put:
- *     summary: Update client basic profile info
+ *     summary: Atualizar os dados básicos do perfil do cliente
  *     tags:
- *       - Users
+ *       - Usuários
  *     security:
  *       - CustomAuth: []
  *     requestBody:
@@ -206,7 +206,7 @@ userRouter.get("/profile/:id", userController.getProfileByUser);
  *                 example: "71998887766"
  *     responses:
  *       200:
- *         description: User profile updated successfully.
+ *         description: Perfil do usuário atualizado com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -214,13 +214,13 @@ userRouter.get("/profile/:id", userController.getProfileByUser);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: User profile updated successfully
+ *                   example: Perfil do usuário atualizado com sucesso
  *       400:
- *         description: Missing required profile fields.
+ *         description: Campos obrigatórios do perfil não informados.
  *       401:
- *         description: Unauthorized.
+ *         description: Não autorizado.
  *       404:
- *         description: User not found.
+ *         description: Usuário não encontrado.
  */
 
 userRouter.put("/profile", userController.updateUser);
@@ -229,9 +229,9 @@ userRouter.put("/profile", userController.updateUser);
  * @openapi
  * /users/address:
  *   put:
- *     summary: Register or update client shipping address
+ *     summary: Cadastrar ou atualizar o endereço de entrega do cliente
  *     tags:
- *       - Users
+ *       - Usuários
  *     security:
  *       - CustomAuth: []
  *     requestBody:
@@ -265,14 +265,14 @@ userRouter.put("/profile", userController.updateUser);
  *               number:
  *                 type: string
  *                 example: "100"
- *                 description: Required if complement is omitted
+ *                 description: Obrigatório quando o complemento não for informado
  *               complement:
  *                 type: string
  *                 example: Near to Praça da Sé
- *                 description: Required if number is omitted
+ *                 description: Obrigatório quando o número não for informado
  *     responses:
  *       200:
- *         description: Address registered successfully.
+ *         description: Endereço cadastrado com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -280,11 +280,11 @@ userRouter.put("/profile", userController.updateUser);
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Address registered successfully
+ *                   example: Endereço cadastrado com sucesso
  *       400:
- *         description: Missing required fields or neither number nor complement provided.
+ *         description: Campos obrigatórios ausentes ou número e complemento não informados.
  *       401:
- *         description: Unauthorized.
+ *         description: Não autorizado.
  */
 userRouter.put("/address", userController.registerAddress);
 

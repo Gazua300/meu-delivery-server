@@ -29,9 +29,9 @@ restaurantRouter.post("/signup", /* uploadSignupImage.single('image'), replicate
  * @openapi
  * /providers/login:
  *   post:
- *     summary: Authenticate merchant & issue JWT token
+ *     summary: Autenticar estabelecimento e emitir token JWT
  *     tags:
- *       - Restaurants
+ *       - Estabelecimentos
  *     requestBody:
  *       required: true
  *       content:
@@ -52,16 +52,16 @@ restaurantRouter.post("/signup", /* uploadSignupImage.single('image'), replicate
  *                 example: password123
  *     responses:
  *       200:
- *         description: Login successful. Returns raw Merchant JWT token.
+ *         description: Login realizado com sucesso. Retorna o token JWT bruto do estabelecimento.
  *         content:
  *           application/json:
  *             schema:
  *               type: string
  *               example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *       400:
- *         description: Missing email or password.
+ *         description: E-mail ou senha não informados.
  *       401:
- *         description: Invalid merchant credentials.
+ *         description: Credenciais do estabelecimento inválidas.
  */
 restaurantRouter.post("/login", restaurantController.loginRestaurant);
 restaurantRouter.post("/password/reset-request", restaurantController.requestPasswordReset);
@@ -70,14 +70,14 @@ restaurantRouter.post("/password/reset-request", restaurantController.requestPas
  * @openapi
  * /providers/profile:
  *   get:
- *     summary: Fetch authenticated merchant restaurant details
+ *     summary: Buscar os dados do estabelecimento autenticado
  *     tags:
- *       - Restaurants
+ *       - Estabelecimentos
  *     security:
  *       - MerchantAuth: []
  *     responses:
  *       200:
- *         description: Merchant profile data retrieved successfully.
+ *         description: Dados do perfil do estabelecimento obtidos com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -106,9 +106,9 @@ restaurantRouter.post("/password/reset-request", restaurantController.requestPas
  *                   nullable: true
  *                   example: https://res.cloudinary.com/demo/image/upload/v1/logo.png
  *       401:
- *         description: Unauthorized - Merchant token missing or invalid.
+ *         description: Não autorizado - Token do estabelecimento ausente ou inválido.
  *       404:
- *         description: Restaurant not found.
+ *         description: Estabelecimento não encontrado.
  */
 restaurantRouter.get("/profile", restaurantController.getRestaurantById);
 restaurantRouter.get("/restaurant/:id", restaurantController.getRestaurantByCustomer);
@@ -124,14 +124,14 @@ restaurantRouter.get("/", restaurantController.getRestaurants);
  * @openapi
  * /providers/products:
  *   get:
- *     summary: Fetch all products list for the authenticated merchant
+ *     summary: Buscar a lista de produtos do estabelecimento autenticado
  *     tags:
- *       - Restaurants
+ *       - Estabelecimentos
  *     security:
  *       - MerchantAuth: []
  *     responses:
  *       200:
- *         description: List of products belonging to the merchant retrieved successfully.
+ *         description: Lista de produtos pertencentes ao estabelecimento obtida com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -161,9 +161,9 @@ restaurantRouter.get("/", restaurantController.getRestaurants);
  *                     type: string
  *                     example: "b92f4c31-2f34-5d67-9b01-234567890def"
  *       401:
- *         description: Unauthorized - Merchant token missing or invalid.
+ *         description: Não autorizado - Token do estabelecimento ausente ou inválido.
  *       404:
- *         description: Menu is empty.
+ *         description: O cardápio está vazio.
  */
 restaurantRouter.get("/products", restaurantController.getAllProducts);
 restaurantRouter.get("/clientside-products/:id", restaurantController.aAllProductsByClientSide);
@@ -172,9 +172,9 @@ restaurantRouter.get("/clientside-products/:id", restaurantController.aAllProduc
  * @openapi
  * /providers/product/{id}:
  *   get:
- *     summary: Fetch a specific product by ID
+ *     summary: Buscar um produto específico pelo ID
  *     tags:
- *       - Restaurants
+ *       - Estabelecimentos
  *     security:
  *       - MerchantAuth: []
  *     parameters:
@@ -183,10 +183,10 @@ restaurantRouter.get("/clientside-products/:id", restaurantController.aAllProduc
  *         required: true
  *         schema:
  *           type: string
- *         description: Product UUID
+ *         description: UUID do produto
  *     responses:
  *       200:
- *         description: Product details retrieved successfully.
+ *         description: Dados do produto obtidos com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -214,9 +214,9 @@ restaurantRouter.get("/clientside-products/:id", restaurantController.aAllProduc
  *                   type: string
  *                   example: "b92f4c31-2f34-5d67-9b01-234567890def"
  *       401:
- *         description: Unauthorized - Merchant token missing or invalid.
+ *         description: Não autorizado - Token do estabelecimento ausente ou inválido.
  *       404:
- *         description: Product not found.
+ *         description: Produto não encontrado.
  */
 restaurantRouter.get("/product/:id", restaurantController.getProductById);
 restaurantRouter.post("/product", uploadLocal.single('image'), replicateUpload, restaurantController.insertProduct);
@@ -226,9 +226,9 @@ restaurantRouter.put("/product/:id", uploadLocal.single('image'), replicateUploa
  * @openapi
  * /providers/update:
  *   put:
- *     summary: Update merchant basic profile details
+ *     summary: Atualizar os dados básicos do perfil do estabelecimento
  *     tags:
- *       - Restaurants
+ *       - Estabelecimentos
  *     security:
  *       - MerchantAuth: []
  *     requestBody:
@@ -253,7 +253,7 @@ restaurantRouter.put("/product/:id", uploadLocal.single('image'), replicateUploa
  *                 example: Largo do Pelourinho
  *     responses:
  *       200:
- *         description: Mercahnt profile updated successfully.
+ *         description: Perfil do estabelecimento atualizado com sucesso.
  *         content:
  *           application/json:
  *             schema:
@@ -261,11 +261,11 @@ restaurantRouter.put("/product/:id", uploadLocal.single('image'), replicateUploa
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Merchant data updated successfully
+ *                   example: Dados do estabelecimento atualizados com sucesso
  *       400:
- *         description: Missing required profile fields.
+ *         description: Campos obrigatórios do perfil não informados.
  *       401:
- *         description: Unauthorized - Merchant token missing or invalid.
+ *         description: Não autorizado - Token do estabelecimento ausente ou inválido.
  */
 restaurantRouter.put("/update", restaurantController.updateRestaurant);
 restaurantRouter.patch("/password/update", restaurantController.updatePassword);
