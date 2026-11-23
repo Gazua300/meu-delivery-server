@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import OrderBusiness, { CreateOrderDTO, PaymentDTO } from "../business/OrderBusiness";
 import Services, { AppError } from "../services/Authentication";
+import { timingSafeEqual } from "crypto";
 
 export default class OrderController {
     constructor(
@@ -35,8 +36,9 @@ export default class OrderController {
 
     public getOrderById = async (req: Request, res: Response): Promise<void> => {
         try {
+            const actor = await this.services.authenticateActor(req)
             const { id } = req.params;
-            const order = await this.orderBusiness.getOrderById(id as string);
+            const order = await this.orderBusiness.getOrderById(id as string, actor);
 
             res.status(200).json(order);
         } catch (error: any) {
@@ -46,8 +48,9 @@ export default class OrderController {
 
     public deleteOrder = async (req: Request, res: Response): Promise<void> => {
         try {
+            const actor = await this.services.authenticateActor(req)
             const { id } = req.params;
-            await this.orderBusiness.deleteOrder(id as string);
+            await this.orderBusiness.deleteOrder(id as string, actor);
 
             res.status(200).json({ message: "Pedido excluído com sucesso." });
         } catch (error: any) {
@@ -82,10 +85,11 @@ export default class OrderController {
 
     public updateOrderQuantity = async (req: Request, res: Response): Promise<void> => {
         try {
+            const user = await this.services.authenticateUser(req)
             const { id } = req.params;
             const { quantity } = req.body;
 
-            await this.orderBusiness.updateOrderQuantity(id as string, quantity);
+            await this.orderBusiness.updateOrderQuantity(id as string, quantity, user.id);
 
             res.status(200).json({ message: "Quantidade do pedido atualizada com sucesso." });
         } catch (error: any) {
@@ -93,24 +97,12 @@ export default class OrderController {
         }
     };
 
-    public finishAllClientOrders = async (req: Request, res: Response): Promise<void> => {
-        try {
-            const user = await this.services.authenticateUser(req);
-
-            await this.orderBusiness.finishAllOrdersByClient(user.id);
-
-            res.status(200).json({ message: "Todos os pedidos marcados como finalizados." });
-        } catch (error: any) {
-            this.handleError(res, error);
-        }
-    };
-
     public markOrderAsFinished = async (req: Request, res: Response): Promise<void> => {
         try {
-            await this.services.authenticateRestaurant(req);
+            const restaurant = await this.services.authenticateRestaurant(req);
             const { id } = req.params;
 
-            await this.orderBusiness.markOrderAsFinished(id as string);
+            await this.orderBusiness.markOrderAsFinished(id as string, restaurant.id);
 
             res.status(200).json({ message: "Status do pedido atualizado para finalizado." });
         } catch (error: any) {
@@ -120,10 +112,10 @@ export default class OrderController {
 
     public revertOrderToRequested = async (req: Request, res: Response): Promise<void> => {
         try {
-            await this.services.authenticateRestaurant(req);
+            const restaurant = await this.services.authenticateRestaurant(req);
             const { id } = req.params;
 
-            await this.orderBusiness.revertOrderToRequested(id as string);
+            await this.orderBusiness.revertOrderToRequested(id as string, restaurant.id);
 
             res.status(200).json({ message: "Status do pedido revertido para solicitado." });
         } catch (error: any) {
@@ -150,6 +142,26 @@ export default class OrderController {
             res.status(200).json(orders);
         } catch (error: any) {
             this.handleError(res, error);
+        }
+    };
+
+    public getArchivedOrders = async(req:Request, res:Response):Promise<void>=>{
+        try{
+            const restaurant = await this.services.authenticateRestaurant(req)
+            const orders = await this.orderBusiness.getArchivedOrders(restaurant.id)
+            res.status(200).json(orders)
+        }catch(error:any){
+            this.handleError(res, error)
+        }
+    }
+
+    public getPaidOrders = async(req:Request, res:Response):Promise<void>=>{
+        try{
+            const user = await this.services.authenticateUser(req)
+            const orders = await this.orderBusiness.getPaidOrders(user.id)
+            res.status(200).json(orders)
+        }catch(error:any){
+            this.handleError(res, error)
         }
     }
 
@@ -201,8 +213,9 @@ export default class OrderController {
 
     public processPayment = async (req: Request, res: Response): Promise<void> => {
         try {
+            const user = await this.services.authenticateUser(req)
             const paymentDTO: PaymentDTO = req.body;
-            const responseData = await this.orderBusiness.processPayment(paymentDTO);
+            const responseData = await this.orderBusiness.processPayment(paymentDTO, user);
 
             res.status(200).json({
                 orderId: responseData.external_reference,
@@ -221,12 +234,60 @@ export default class OrderController {
 
     public getPaymentStatus = async (req: Request, res: Response): Promise<void> => {
         try {
+            const user = await this.services.authenticateUser(req)
             const { id } = req.params;
-            const status = await this.orderBusiness.getPaymentStatus(id as string);
+            const status = await this.orderBusiness.getPaymentStatus(id as string, user);
 
             res.status(200).json({ status });
         } catch (error: any) {
             this.handleError(res, error);
         }
     };    
+
+    public getPendingPayment = async(req:Request, res:Response):Promise<void>=>{
+        try{
+            const user = await this.services.authenticateUser(req)
+            const payment = await this.orderBusiness.getPendingPayment(user)
+            res.status(200).json(payment)
+        }catch(error:any){
+            this.handleError(res, error)
+        }
+    }
+
+    public cancelPayment = async(req:Request, res:Response):Promise<void>=>{
+        try{
+            const user = await this.services.authenticateUser(req)
+            const { id } = req.params
+            await this.orderBusiness.cancelPayment(id as string, user)
+            res.status(200).json({ message: 'Pagamento cancelado com sucesso.' })
+        }catch(error:any){
+            this.handleError(res, error)
+        }
+    }
+
+    public reconcileExpiredPendingPayments = async(
+        req:Request,
+        res:Response
+    ):Promise<void>=>{
+        try{
+            const cronSecret = process.env.CRON_SECRET?.trim()
+            if(!cronSecret){
+                throw new AppError(503, 'A rotina agendada de pagamentos não está configurada')
+            }
+
+            const providedAuthorization = Buffer.from(req.header('authorization') || '')
+            const expectedAuthorization = Buffer.from(`Bearer ${cronSecret}`)
+            if(
+                providedAuthorization.length !== expectedAuthorization.length ||
+                !timingSafeEqual(providedAuthorization, expectedAuthorization)
+            ){
+                throw new AppError(401, 'Não autorizado')
+            }
+
+            const result = await this.orderBusiness.reconcileExpiredPendingPayments()
+            res.status(200).json(result)
+        }catch(error:any){
+            this.handleError(res, error)
+        }
+    }
 }

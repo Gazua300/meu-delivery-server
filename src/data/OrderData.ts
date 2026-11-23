@@ -6,11 +6,22 @@ import StockConflictError from "../errors/StockConflictError"
 import { AppError } from "../services/Authentication"
 
 
+type DatabaseProduct = {
+    name?: string
+    product?: string
+    price: string | number
+    description?: string
+    photoUrl?: string
+    photo_url?: string
+}
+
 
 export default class OrderData extends ConnectToDatabase{
     protected ORDER_TABLE = 'orders'
     protected USER_TABLE = 'users'
     protected PRODUCT_TABLE = 'products'
+    protected PAYMENTS_TABLE = 'payments'
+    protected PAYMENT_ORDERS_TABLE = 'payment_orders'
 
     
     public createOrder = async(order:Orders, productId:string, providerId:string, quantity:number):Promise<void>=>{
@@ -46,14 +57,47 @@ export default class OrderData extends ConnectToDatabase{
     }
 
 
+    public findProductByIdAndProvider = async(
+        productId:string,
+        providerId:string
+    ):Promise<DatabaseProduct | undefined>=>{
+        try{
+            return await ConnectToDatabase.con(this.PRODUCT_TABLE)
+                .where({ id: productId, provider: providerId })
+                .first()
+        }catch(e:unknown){
+            const message = e instanceof Error ? e.message : String(e)
+            throw new Error(`Erro ao buscar produto: ${message}`)
+        }
+    }
+
+
     public findRequestedOrder = async(product:string, price:number, description:string, client:string):Promise<OrderModel | undefined>=>{
         try{
+            const paymentOrdersTable = this.PAYMENT_ORDERS_TABLE
+            const paymentsTable = this.PAYMENTS_TABLE
 
-            const [order] = await ConnectToDatabase.con(this.ORDER_TABLE).where({
-                product, price, description, client, state: 'REQUESTED'
-            })
-            
-            return order
+            return await ConnectToDatabase.con(this.ORDER_TABLE)
+                .where({
+                    product,
+                    price,
+                    description,
+                    client,
+                    state: 'REQUESTED'
+                })
+                .whereNotExists(function(){
+                    this.select(1)
+                        .from(`${paymentOrdersTable} as payment_orders`)
+                        .join(
+                            `${paymentsTable} as payments`,
+                            'payments.id',
+                            'payment_orders.payment_id'
+                        )
+                        .whereRaw('payment_orders.order_id = orders.id')
+                        .andWhere('payments.client_id', client)
+                        .andWhere('payments.status', 'APPROVED')
+                })
+                .first()
         }catch(e:any){
             throw new Error(`Error fetching requested order: ${e.message || e}`)
         }
@@ -80,6 +124,82 @@ export default class OrderData extends ConnectToDatabase{
 
         }catch(e:any){
             throw new Error(`Error fetching all orders: ${e.message || e}`)
+        }
+    }
+
+
+    public findVisibleOrdersByProvider = async(providerId:string):Promise<OrderModel[]>=>{
+        try{
+            const db = ConnectToDatabase.con
+
+            return await db(this.ORDER_TABLE)
+                .select(`${this.ORDER_TABLE}.*`)
+                .select(
+                    db.raw(
+                        `CASE WHEN EXISTS (
+                            SELECT 1
+                            FROM ?? AS payment_orders
+                            JOIN ?? AS payments
+                                ON payments.id = payment_orders.payment_id
+                            WHERE payment_orders.order_id = ??.id
+                                AND payments.status = ?
+                        ) THEN 'APPROVED' ELSE NULL END AS payment_status`,
+                        [
+                            this.PAYMENT_ORDERS_TABLE,
+                            this.PAYMENTS_TABLE,
+                            this.ORDER_TABLE,
+                            'APPROVED'
+                        ]
+                    )
+                )
+                .select(
+                    db.raw(
+                        `(
+                            SELECT MIN(payments.approved_at)
+                            FROM ?? AS payment_orders
+                            JOIN ?? AS payments
+                                ON payments.id = payment_orders.payment_id
+                            WHERE payment_orders.order_id = ??.id
+                                AND payments.status = ?
+                        ) AS payment_approved_at`,
+                        [
+                            this.PAYMENT_ORDERS_TABLE,
+                            this.PAYMENTS_TABLE,
+                            this.ORDER_TABLE,
+                            'APPROVED'
+                        ]
+                    )
+                )
+                .where({ provider: providerId })
+                .whereNull('archived_at')
+        }catch(e:unknown){
+            const message = e instanceof Error ? e.message : String(e)
+            throw new Error(`Erro ao buscar pedidos visíveis do fornecedor: ${message}`)
+        }
+    }
+
+
+    public findArchiveOrdersByProvider = async(providerId:string):Promise<OrderModel[]>=>{
+        try{
+            return await ConnectToDatabase.con(`${this.ORDER_TABLE} as orders`)
+                .leftJoin(
+                    `${this.PAYMENT_ORDERS_TABLE} as payment_orders`,
+                    'payment_orders.order_id',
+                    'orders.id'
+                )
+                .leftJoin(
+                    `${this.PAYMENTS_TABLE} as payments`,
+                    'payments.id',
+                    'payment_orders.payment_id'
+                )
+                .select('orders.*')
+                .select('payments.status as payment_status')
+                .where('orders.provider', providerId)
+                .whereNotNull('orders.archived_at')
+                .orderBy('orders.archived_at', 'desc')
+        }catch(e:unknown){
+            const message = e instanceof Error ? e.message : String(e)
+            throw new Error(`Erro ao buscar pedidos arquivados: ${message}`)
         }
     }
 
@@ -143,9 +263,23 @@ export default class OrderData extends ConnectToDatabase{
 
     public findActiveOrdersByClient = async(client:string):Promise<OrderModel[]>=>{
         try{
-            
+            const paymentOrdersTable = this.PAYMENT_ORDERS_TABLE
+            const paymentsTable = this.PAYMENTS_TABLE
+
             return await ConnectToDatabase.con(this.ORDER_TABLE)
                 .where({ client, state: 'REQUESTED' })
+                .whereNotExists(function(){
+                    this.select(1)
+                        .from(`${paymentOrdersTable} as payment_orders`)
+                        .join(
+                            `${paymentsTable} as payments`,
+                            'payments.id',
+                            'payment_orders.payment_id'
+                        )
+                        .whereRaw('payment_orders.order_id = orders.id')
+                        .andWhere('payments.client_id', client)
+                        .andWhere('payments.status', 'APPROVED')
+                })
 
         }catch(e:any){
             throw new Error(`Error fetching active orders: ${e.message || e}`)
@@ -155,12 +289,74 @@ export default class OrderData extends ConnectToDatabase{
 
     public findAllOrdersByClient = async(client:string, providerId:string):Promise<OrderModel[]>=>{
         try{
-            
-            return await ConnectToDatabase.con(this.ORDER_TABLE)
-                .where({ client })
-                .andWhere({ provider: providerId })
+            const db = ConnectToDatabase.con
+
+            return await db(this.ORDER_TABLE)
+                .select(`${this.ORDER_TABLE}.*`)
+                .select(
+                    db.raw(
+                        `CASE WHEN EXISTS (
+                            SELECT 1
+                            FROM ?? AS payment_orders
+                            JOIN ?? AS payments
+                                ON payments.id = payment_orders.payment_id
+                            WHERE payment_orders.order_id = ??.id
+                                AND payments.status = ?
+                        ) THEN 'APPROVED' ELSE NULL END AS payment_status`,
+                        [
+                            this.PAYMENT_ORDERS_TABLE,
+                            this.PAYMENTS_TABLE,
+                            this.ORDER_TABLE,
+                            'APPROVED'
+                        ]
+                    )
+                )
+                .select(
+                    db.raw(
+                        `(
+                            SELECT MIN(payments.approved_at)
+                            FROM ?? AS payment_orders
+                            JOIN ?? AS payments
+                                ON payments.id = payment_orders.payment_id
+                            WHERE payment_orders.order_id = ??.id
+                                AND payments.status = ?
+                        ) AS payment_approved_at`,
+                        [
+                            this.PAYMENT_ORDERS_TABLE,
+                            this.PAYMENTS_TABLE,
+                            this.ORDER_TABLE,
+                            'APPROVED'
+                        ]
+                    )
+                )
+                .where({ client, provider: providerId })
+                .whereNull('archived_at')
         }catch(e:any){
             throw new Error(`Error fetching client orders: ${e.message || e}`)
+        }
+    }
+
+
+    public findPaidOrdersByClient = async(clientId:string):Promise<OrderModel[]>=>{
+        try{
+            return await ConnectToDatabase.con(this.ORDER_TABLE)
+                .join(
+                    this.PAYMENT_ORDERS_TABLE,
+                    `${this.PAYMENT_ORDERS_TABLE}.order_id`,
+                    `${this.ORDER_TABLE}.id`
+                )
+                .join(
+                    this.PAYMENTS_TABLE,
+                    `${this.PAYMENTS_TABLE}.id`,
+                    `${this.PAYMENT_ORDERS_TABLE}.payment_id`
+                )
+                .where(`${this.PAYMENTS_TABLE}.client_id`, clientId)
+                .andWhere(`${this.PAYMENTS_TABLE}.status`, 'APPROVED')
+                .select(`${this.ORDER_TABLE}.*`)
+                .distinct()
+        }catch(e:unknown){
+            const message = e instanceof Error ? e.message : String(e)
+            throw new Error(`Erro ao buscar pedidos pagos: ${message}`)
         }
     }
 
@@ -190,6 +386,17 @@ export default class OrderData extends ConnectToDatabase{
                 
                 if(!currentOrder){
                     throw new AppError(404, 'Pedido não encontrado')   
+                }
+
+                const paymentLink = await trx(this.PAYMENT_ORDERS_TABLE)
+                    .where({ order_id: currentOrder.id })
+                    .first('payment_id')
+
+                if(paymentLink){
+                    throw new AppError(
+                        409,
+                        'Este pedido está vinculado a um pagamento e não pode ser excluído.'
+                    )
                 }
 
                 if(currentOrder.state === 'REQUESTED'){
@@ -236,6 +443,22 @@ export default class OrderData extends ConnectToDatabase{
     }
 
 
+    public archiveOrder = async(orderId:string, providerId:string):Promise<void>=>{
+        const updatedRows = await ConnectToDatabase.con(this.ORDER_TABLE)
+            .where({
+                id: orderId,
+                provider: providerId
+            })
+            .whereIn('state', ['EXPIRED', 'FINISHED'])
+            .whereNull('archived_at')
+            .update({ archived_at: new Date() })
+
+        if(updatedRows !== 1){
+            throw new AppError(409, 'Somente pedidos expirados ou finalizados podem ser arquivados.')
+        }
+    }
+
+
     public updateOrderQuantity = async(quantity:number, id:string):Promise<void>=>{
         try{
 
@@ -251,6 +474,25 @@ export default class OrderData extends ConnectToDatabase{
 
                 if(order.state !== 'REQUESTED'){
                     throw new AppError(409, 'Só é possível alterar pedidos solicitados.')
+                }
+
+                const paymentForOrder = await trx({
+                    paymentOrder: this.PAYMENT_ORDERS_TABLE
+                })
+                    .join(
+                        { payment: this.PAYMENTS_TABLE },
+                        'payment.id',
+                        'paymentOrder.payment_id'
+                    )
+                    .where('paymentOrder.order_id', order.id)
+                    .whereIn('payment.status', ['PENDING', 'APPROVED'])
+                    .first('payment.id')
+
+                if(paymentForOrder){
+                    throw new AppError(
+                        409,
+                        'Não é possível alterar a quantidade enquanto o pagamento estiver pendente ou aprovado.'
+                    )
                 }
 
                 const difference = quantity - order.quantity
@@ -299,40 +541,41 @@ export default class OrderData extends ConnectToDatabase{
     }
 
 
-    public finishAllOrdersByClient = async(clientId:string):Promise<void>=>{
+    public updateOrderStatusToFinished = async(
+        id:string,
+        providerId:string
+    ):Promise<void>=>{
         try{
+            const updatedRows = await ConnectToDatabase.con(this.ORDER_TABLE)
+                .where({ id, provider: providerId, state: 'REQUESTED' })
+                .update({ state: 'FINISHED' })
 
-            await ConnectToDatabase.con(this.ORDER_TABLE).update({
-                state: 'FINISHED'
-            }).where({ client: clientId, state: 'REQUESTED' })
+            if(updatedRows === 0){
+                throw new AppError(404, 'Pedido não encontrado para este fornecedor')
+            }
 
         }catch(e:any){
-            throw new Error(`Error finishing all orders: ${e.message || e}`)
-        }
-    }
-
-
-    public updateOrderStatusToFinished = async(id:string):Promise<void>=>{
-        try{
-
-            await ConnectToDatabase.con(this.ORDER_TABLE).update({
-                state: 'FINISHED'
-            }).where({ id })
-
-        }catch(e:any){
+            if(e instanceof AppError) throw e
             throw new Error(`Error marking order as finished: ${e.message || e}`)
         }
     }
 
 
-    public updateOrderStatusToRequested = async(id:string):Promise<void>=>{
+    public updateOrderStatusToRequested = async(
+        id:string,
+        providerId:string
+    ):Promise<void>=>{
         try{
+            const updatedRows = await ConnectToDatabase.con(this.ORDER_TABLE)
+                .where({ id, provider: providerId, state: 'FINISHED' })
+                .update({ state: 'REQUESTED' })
 
-            await ConnectToDatabase.con(this.ORDER_TABLE).update({
-                state: 'REQUESTED'
-            }).where({ id })
+            if(updatedRows === 0){
+                throw new AppError(404, 'Pedido não encontrado para este fornecedor')
+            }
 
         }catch(e:any){
+            if(e instanceof AppError) throw e
             throw new Error(`Error reverting order to requested: ${e.message || e}`)
         }
     }

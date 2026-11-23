@@ -17,6 +17,11 @@ type TokenData = {
     exp:number
 }
 
+export type AuthenticatedActor = {
+    id: string
+    role: 'USER' | 'RESTAURANT'
+}
+
 
 export class AppError extends Error{
     constructor(public statusCode: number, message: string){
@@ -41,10 +46,14 @@ export default class Services{
     }
 
     public getTokenData = (token:string):TokenData=>{
-        return jwt.verify(
-            token,
-            process.env.JWT_KEY as string
-        ) as TokenData
+        try{
+            return jwt.verify(
+                token,
+                process.env.JWT_KEY as string
+            ) as TokenData
+        }catch{
+            throw new AppError(401, 'Token inválido ou expirado')
+        }
     }
 
     public hashPassword = (txt:string):string=>{
@@ -58,6 +67,33 @@ export default class Services{
         return bcrypt.compareSync(txt, hash)
     }
 
+    public authenticateActor = async(req:Request):Promise<AuthenticatedActor>=>{
+        const authHeader = req.headers.authorization
+        if(!authHeader){
+            throw new AppError(401, 'O cabeçalho de autorização está ausente')
+        }
+
+        const token = authHeader.startsWith('Bearer ')
+            ? authHeader.slice('Bearer '.length)
+            : authHeader
+        if(!token){
+            throw new AppError(401, 'Token de autorização ausente')
+        }
+
+        const tokenData = this.getTokenData(token)
+        const user = await this.userData.getProfile(tokenData.payload)
+        if(user){
+            return { id: user.id, role: 'USER' }
+        }
+
+        const restaurant = await this.restaurantData.findRestaurantById(tokenData.payload)
+        if(restaurant){
+            return { id: restaurant.id, role: 'RESTAURANT' }
+        }
+
+        throw new AppError(401, 'Token inválido ou não autorizado')
+    }
+
     public authenticateUser = async(req:Request):Promise<UserModel>=>{
         const authHeader = req.headers.authorization
         if (!authHeader) {
@@ -65,7 +101,12 @@ export default class Services{
         }
 
 
-        const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader
+        const token = authHeader.startsWith('Bearer ')
+            ? authHeader.slice('Bearer '.length)
+            : authHeader
+        if(!token){
+            throw new AppError(401, 'Token de autorização ausente')
+        }
         const tokenData =  this.getTokenData(token)
         const user = await this.userData.getProfile(tokenData.payload)
 
@@ -84,7 +125,12 @@ export default class Services{
         }
         
         
-        const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader
+        const token = authHeader.startsWith('Bearer ')
+            ? authHeader.slice('Bearer '.length)
+            : authHeader
+        if(!token){
+            throw new AppError(401, 'Token de autorização ausente')
+        }
         const tokenData =  this.getTokenData(token)
         const restaurant = await this.restaurantData.findRestaurantById(tokenData.payload)
     

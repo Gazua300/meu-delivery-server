@@ -7,6 +7,8 @@ export default class DatabaseManager extends ConnectToDatabase{
     static RESTAURANT_TABLE = 'restaurants'
     static PRODUCT_TABLE = 'products'
     static ORDER_TABLE = 'orders'
+    static PAYMENTS_TABLE = 'payments'
+    static PAYMENT_ORDERS_TABLE = 'payment_orders'
     static RESET_PASSWORD_TABLE = 'reset_password'
     static PROVIDER_NOTIFICATION_MATRIX_TABLE = 'matrix_provider_notifications'
     static PROVIDER_NOTIFICATION_TABLE = 'provider_notifications'
@@ -134,6 +136,7 @@ export default class DatabaseManager extends ConnectToDatabase{
                     table.timestamp('moment').notNullable()
                     table.string('client', 255).notNullable()
                     table.string('state', 50).notNullable()
+                    table.timestamp('archived_at').nullable()
                     table.string('address', 255).notNullable()
                     table.text('description').notNullable()
                     table.string('payment', 10)
@@ -143,11 +146,89 @@ export default class DatabaseManager extends ConnectToDatabase{
 
                 console.log(`${this.ORDER_TABLE} table was created successfully`)
             }else{
+                const hasArchivedAt = await this.con.schema.hasColumn(
+                    this.ORDER_TABLE,
+                    'archived_at'
+                )
+
+                if(!hasArchivedAt){
+                    await this.con.schema.alterTable(this.ORDER_TABLE, (table)=>{
+                        table.timestamp('archived_at').nullable()
+                    })
+                }
+
                 console.log(`${this.ORDER_TABLE} table already exists!`)
             }
-        }catch(e){
-            console.log(`Error creating ${this.ORDER_TABLE} table: ${e}`)
+        }catch(error){
+            console.error(`Erro ao criar ou atualizar ${this.ORDER_TABLE}:`, error)
+            throw error
         }
+    }
+
+    public static async createPaymentsTable():Promise<void>{
+            try{
+                const exists = await this.con.schema.hasTable(this.PAYMENTS_TABLE)
+
+                if(!exists){
+                    await this.con.schema.createTable(this.PAYMENTS_TABLE, (table)=>{
+                        table.string('id', 36).primary().notNullable()
+                        table.string('client_id', 36)
+                            .nullable()
+                            .references('id')
+                            .inTable(this.USER_TABLE)
+                            .onDelete('SET NULL')
+                        table.string('external_reference', 150).notNullable().unique()
+                        table.string('mercado_pago_id', 50).unique()
+                        table.decimal('amount', 10, 2).notNullable()
+                        table.string('method', 30).notNullable()
+                        table.string('status', 30).notNullable().defaultTo('PENDING')
+                        table.timestamp('created_at').notNullable().defaultTo(this.con.fn.now())
+                        table.timestamp('approved_at').nullable()
+                        table.timestamp('expires_at').notNullable()
+                        table.index(['client_id', 'status'])
+                        table.index(['status', 'expires_at'])
+                    })
+                }else{
+                    const hasApprovedAt = await this.con.schema.hasColumn(
+                        this.PAYMENTS_TABLE,
+                        'approved_at'
+                    )
+
+                    if(!hasApprovedAt){
+                        await this.con.schema.alterTable(this.PAYMENTS_TABLE, (table)=>{
+                            table.timestamp('approved_at').nullable()
+                        })
+                    }
+                }
+            }catch(error){
+                console.error(`Erro ao criar ${this.PAYMENTS_TABLE}:`, error)
+                throw error
+            }
+    }
+
+    public static async createPaymentOrdersTable():Promise<void>{
+            try{
+                const exists = await this.con.schema.hasTable(this.PAYMENT_ORDERS_TABLE)
+
+                if(!exists){
+                    await this.con.schema.createTable(this.PAYMENT_ORDERS_TABLE, (table)=>{
+                        table.string('payment_id', 36)
+                            .notNullable()
+                            .references('id')
+                            .inTable(this.PAYMENTS_TABLE)
+                        table.string('order_id', 36)
+                            .notNullable()
+                            .references('id')
+                            .inTable(this.ORDER_TABLE)
+                            .onDelete('CASCADE')
+                        table.primary(['payment_id', 'order_id'])
+                        table.index('order_id')
+                    })
+                }
+            }catch(error){
+                console.error(`Erro ao criar ${this.PAYMENT_ORDERS_TABLE}:`, error)
+                throw error
+            }
     }
 //================== NOTIFICATION TABLES ==================================
     //================ PROVIDER ==============================
@@ -246,6 +327,8 @@ export default class DatabaseManager extends ConnectToDatabase{
     await DatabaseManager.createRestaurantsTable()
     await DatabaseManager.createProductsTable()
     await DatabaseManager.createOrdersTable()
+    await DatabaseManager.createPaymentsTable()
+    await DatabaseManager.createPaymentOrdersTable()
     await DatabaseManager.createResetPasswordTable()
     await DatabaseManager.createMatrixProviderNotificationsTable()
     await DatabaseManager.createProviderNotificationsTable()

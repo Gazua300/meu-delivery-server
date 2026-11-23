@@ -46,9 +46,12 @@ export interface OrderModel{
     total:number
     moment:string 
     client:string
-    state: 'REQUESTED' | 'FINISHED'
+    state: 'REQUESTED' | 'FINISHED' | 'EXPIRED'
     provider:string
     productid:string
+    payment_status?: string | null
+    payment_approved_at?: Date | string | null
+    archived_at?: Date | string | null
 }
 
 export interface OrdersByMonthModel {

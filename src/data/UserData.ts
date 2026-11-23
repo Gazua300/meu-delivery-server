@@ -84,6 +84,36 @@ export default class UserData extends ConnectToDatabase{
         }
     }
 
+
+    public getProfileForProvider = async(
+        userId:string,
+        providerId:string
+    ):Promise<UserModel | undefined>=>{
+        try{
+            return await ConnectToDatabase.con(this.USER_TABLE)
+                .join(this.ORDER_TABLE, `${this.ORDER_TABLE}.client`, `${this.USER_TABLE}.id`)
+                .where(`${this.USER_TABLE}.id`, userId)
+                .andWhere(`${this.ORDER_TABLE}.provider`, providerId)
+                .select(
+                    `${this.USER_TABLE}.id`,
+                    `${this.USER_TABLE}.username`,
+                    `${this.USER_TABLE}.email`,
+                    `${this.USER_TABLE}.street`,
+                    `${this.USER_TABLE}.cep`,
+                    `${this.USER_TABLE}.number`,
+                    `${this.USER_TABLE}.neighbourhood`,
+                    `${this.USER_TABLE}.city`,
+                    `${this.USER_TABLE}.state`,
+                    `${this.USER_TABLE}.complement`,
+                    `${this.USER_TABLE}.phone`
+                )
+                .first()
+        }catch(error:unknown){
+            const message = error instanceof Error ? error.message : String(error)
+            throw new Error(`Erro ao buscar perfil do cliente do fornecedor: ${message}`)
+        }
+    }
+
     
     public findByEmail = async (email: string): Promise<UserModel | undefined> => {
         try {
@@ -198,7 +228,7 @@ export default class UserData extends ConnectToDatabase{
             
             await connection.transaction(async (trx) => {
                 await trx(this.ORDER_TABLE).del().where({ client: userId })
-                await trx(this.USER_TABLE).del().where({ userId })
+                await trx(this.USER_TABLE).del().where({ id: userId })
             })
         } catch (error: any) {
             throw new Error(`Failed to delete user and associated orders: ${error.message || error}`)
