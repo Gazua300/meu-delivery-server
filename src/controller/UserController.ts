@@ -23,7 +23,7 @@ export default class UserController {
         }
 
         res.status(500).json({
-            message: error.message || "An unexpected internal server error occurred."
+            message: error.message || "Ocorreu um erro interno inesperado no servidor."
         });
     }
 
@@ -105,7 +105,7 @@ export default class UserController {
             const user = await this.services.authenticateUser(req)
             await this.userBusiness.updatePassword(dto, user.id);
 
-            res.status(200).json({ message: "Password updated successfully" });
+            res.status(200).json({ message: "Senha atualizada com sucesso" });
         } catch (error: any) {
             this.handleError(res, error);
         }
@@ -118,7 +118,7 @@ export default class UserController {
 
             await this.userBusiness.registerAddress(user.id, addressDTO);
 
-            res.status(200).json({ message: "Address registered successfully" });
+            res.status(200).json({ message: "Endereço cadastrado com sucesso" });
         } catch (error: any) {
             this.handleError(res, error);
         }
@@ -131,7 +131,7 @@ export default class UserController {
 
             await this.userBusiness.updateUser(user.id, updateDTO);
 
-            res.status(200).json({ message: "User profile updated successfully" });
+            res.status(200).json({ message: "Perfil do usuário atualizado com sucesso" });
         } catch (error: any) {
             this.handleError(res, error);
         }
@@ -142,7 +142,7 @@ export default class UserController {
             const user = await this.services.authenticateUser(req);
             await this.userBusiness.deleteUser(user);
 
-            res.status(200).json({ message: "User account and all its data was deleted successfully" });
+            res.status(200).json({ message: "Conta do usuário e todos os seus dados foram excluídos com sucesso" });
         } catch (error: any) {
             this.handleError(res, error);
         }

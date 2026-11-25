@@ -18,7 +18,7 @@ export default class ProviderNotificationController{
         }
 
         res.status(500).json({
-            message: error.message || "An unexpected internal server error occurred."
+            message: error.message || "Ocorreu um erro interno inesperado no servidor."
         });
     }
 

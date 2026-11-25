@@ -44,7 +44,7 @@ export default class StatisticsData extends ConnectToDatabase{
                 {title: 'Products', value: totalProducts},
             ]
         }catch(e:any){
-            throw new Error(`Failed to get statistics: ${e.message || e}`)
+            throw new Error(`Falha ao buscar as estatísticas: ${e.message || e}`)
         }
     }
 
@@ -93,7 +93,7 @@ export default class StatisticsData extends ConnectToDatabase{
 
             return result
         }catch(e:any){
-            throw new Error(`Failed to get monthly statistics: ${e.message || e}`)
+            throw new Error(`Falha ao buscar as estatísticas mensais: ${e.message || e}`)
         }
     }
 
@@ -149,7 +149,7 @@ export default class StatisticsData extends ConnectToDatabase{
                 { title: 'Growth', value: `${growthPercentage}%` }
             ]
         }catch(e:any){
-            throw new Error(`Failed to growth percentage of statistics: ${e}`)
+            throw new Error(`Falha ao buscar a porcentagem de crescimento das estatísticas: ${e}`)
         }
     }
 }

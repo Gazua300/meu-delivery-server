@@ -56,7 +56,7 @@ export default class ProviderNotificationData extends ConnectToDatabase{
             //     is_read: false
             // })
         }catch(e:any){
-            throw new Error(`Failed to save notification: ${e.message || e}`)
+            throw new Error(`Falha ao salvar a notificação: ${e.message || e}`)
         }
     }
 
@@ -70,7 +70,7 @@ export default class ProviderNotificationData extends ConnectToDatabase{
                     user_id: providerId
                 })
         }catch(e:any){
-            throw new Error(`Failed to update notification: ${e.message || e}`)
+            throw new Error(`Falha ao atualizar a notificação: ${e.message || e}`)
         }
     }
 
@@ -81,7 +81,7 @@ export default class ProviderNotificationData extends ConnectToDatabase{
                 .update({ is_read: true })
                 .where({ user_id: providerId })
         }catch(e:any){
-            throw new Error(`Failed to update notification: ${e.message || e}`)
+            throw new Error(`Falha ao atualizar a notificação: ${e.message || e}`)
         }
     }
 
@@ -104,7 +104,7 @@ export default class ProviderNotificationData extends ConnectToDatabase{
 
             return notifications
         }catch(e:any){
-            throw new Error(`Failed to fetch notifications: ${e.message || e}`)
+            throw new Error(`Falha ao buscar notificações: ${e.message || e}`)
         }
     }
 
@@ -115,7 +115,7 @@ export default class ProviderNotificationData extends ConnectToDatabase{
                 .del()
                 .where({ user_id: userId, id })
         }catch(e:any){
-            throw new Error(`Failed to delete notifications: ${e.message || e}`)
+            throw new Error(`Falha ao excluir notificações: ${e.message || e}`)
         }
     }
 }

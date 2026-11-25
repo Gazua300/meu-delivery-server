@@ -26,7 +26,7 @@ export default class RestaurantController {
         }
 
         res.status(500).json({ 
-            message: error.message || "An unexpected error occurred on the server." 
+            message: error.message || "Ocorreu um erro inesperado no servidor."
         });
     }
 
@@ -93,7 +93,7 @@ export default class RestaurantController {
 
             await this.restaurantBusiness.updateRestaurant(restaurant.id, updateDTO);
 
-            res.status(200).json({ message: "Merchant data updated successfully" });
+            res.status(200).json({ message: "Dados do estabelecimento atualizados com sucesso" });
         } catch (error: any) {
             this.handleError(res, error);
         }
@@ -117,7 +117,7 @@ export default class RestaurantController {
             const restaurant = await this.services.authenticateRestaurant(req)
             await this.restaurantBusiness.updatePassword(dto, restaurant.id);
 
-            res.status(200).json({ message: "Password updated successfully" });
+            res.status(200).json({ message: "Senha atualizada com sucesso" });
         } catch (error: any) {
             this.handleError(res, error);
         }
@@ -128,7 +128,7 @@ export default class RestaurantController {
             const restaurant = await this.services.authenticateRestaurant(req)
             await this.restaurantBusiness.deleteRestaurantAccount(restaurant.id)
 
-            res.status(200).send('You account was deleted')
+            res.status(200).send('Sua conta foi excluída')
         }catch(e:any){
             this.handleError(res, e);
         }
@@ -144,7 +144,7 @@ export default class RestaurantController {
 
             await this.restaurantBusiness.insertProduct(createProductDTO, image, reataurant.id);
 
-            res.status(201).json({ message: "Product registered successfully!" });
+            res.status(201).json({ message: "Produto cadastrado com sucesso!" });
         } catch (error: any) {
             this.handleError(res, error);
         }
@@ -159,7 +159,7 @@ export default class RestaurantController {
 
             await this.restaurantBusiness.updateProduct(id as string, image, updateDTO);
 
-            res.status(200).json({ message: "Product updated successfully!" });
+            res.status(200).json({ message: "Produto atualizado com sucesso!" });
         } catch (error: any) {
             this.handleError(res, error);
         }
@@ -209,7 +209,7 @@ export default class RestaurantController {
 
             await this.restaurantBusiness.deleteProduct(id as string);
 
-            res.status(200).json({ message: `'${product.name}' deleted successfully` });
+            res.status(200).json({ message: `Produto '${product.name}' excluído com sucesso` });
         } catch (error: any) {
             this.handleError(res, error);
         }

@@ -39,7 +39,7 @@ export default class Order extends ConnectToDatabase{
                 productid: this.productid
             })            
         }catch(e:any){
-            throw new Error(`Failed to save order: ${e.message || e}`)
+            throw new Error(`Falha ao salvar o pedido: ${e.message || e}`)
         }
     }
 }

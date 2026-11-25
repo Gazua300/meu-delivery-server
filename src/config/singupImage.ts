@@ -31,8 +31,8 @@ export const replicatedSignupUpload = (req:Request, res:Response, next:NextFunct
 
         next()
     }catch(e){
-        console.error('An error occurred while inserting file: ', e)
-        res.status(500).json({ e: 'Error inserting file through the system'})
+        console.error('Ocorreu um erro ao inserir o arquivo: ', e)
+        res.status(500).json({ e: 'Erro ao inserir o arquivo no sistema'})
     }
 }
 

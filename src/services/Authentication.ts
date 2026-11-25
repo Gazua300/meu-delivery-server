@@ -97,7 +97,7 @@ export default class Services{
     public authenticateUser = async(req:Request):Promise<UserModel>=>{
         const authHeader = req.headers.authorization
         if (!authHeader) {
-            throw new AppError(401, "Authorization header is missing");
+            throw new AppError(401, "O cabeçalho de autorização está ausente");
         }
 
 
@@ -111,7 +111,7 @@ export default class Services{
         const user = await this.userData.getProfile(tokenData.payload)
 
         if(!user){
-            throw new AppError(404, 'User not found')
+            throw new AppError(404, 'Usuário não encontrado')
         }
 
         return user
@@ -121,7 +121,7 @@ export default class Services{
         const authHeader = req.headers.authorization
         
         if(!authHeader){
-            throw new AppError(401, 'Authorization header is missing')
+            throw new AppError(401, 'O cabeçalho de autorização está ausente')
         }
         
         
@@ -135,7 +135,7 @@ export default class Services{
         const restaurant = await this.restaurantData.findRestaurantById(tokenData.payload)
     
         if(!restaurant){
-            throw new AppError(404, 'Restaurant not found')
+            throw new AppError(404, 'Estabelecimento não encontrado')
         }
     
         return restaurant

@@ -34,7 +34,7 @@ export default class CategoriesData extends ConnectToDatabase{
                 value: Number(row.value)
             }))
         }catch(e:any){
-            throw new Error(`Failed to fetch statistics of categories: ${e.message || e}`)
+            throw new Error(`Falha ao buscar as estatísticas das categorias: ${e.message || e}`)
         }
     }
 }

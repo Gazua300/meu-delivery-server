@@ -52,7 +52,7 @@ export default class OrderData extends ConnectToDatabase{
                 throw e
             }
             const message = e instanceof Error ? e.message : String(e)
-            throw new Error(`Error creating order: ${message}`)
+            throw new Error(`Erro ao criar o pedido: ${message}`)
         }
     }
 
@@ -99,7 +99,7 @@ export default class OrderData extends ConnectToDatabase{
                 })
                 .first()
         }catch(e:any){
-            throw new Error(`Error fetching requested order: ${e.message || e}`)
+            throw new Error(`Erro ao buscar o pedido solicitado: ${e.message || e}`)
         }
     }
 
@@ -111,7 +111,7 @@ export default class OrderData extends ConnectToDatabase{
             
             return order
         }catch(e:any){
-            throw new Error(`Error fetching order by ID: ${e.message || e}`)
+            throw new Error(`Erro ao buscar o pedido pelo ID: ${e.message || e}`)
         }
     }
 
@@ -123,7 +123,7 @@ export default class OrderData extends ConnectToDatabase{
                 .where({ provider: providerId })
 
         }catch(e:any){
-            throw new Error(`Error fetching all orders: ${e.message || e}`)
+            throw new Error(`Erro ao buscar todos os pedidos: ${e.message || e}`)
         }
     }
 
@@ -228,7 +228,7 @@ export default class OrderData extends ConnectToDatabase{
                 ).distinct()
 
         }catch(e:any){
-            throw new Error(`Error fetching all orders: ${e.message || e}`)
+            throw new Error(`Erro ao buscar todos os pedidos: ${e.message || e}`)
         }
     }
 
@@ -256,7 +256,7 @@ export default class OrderData extends ConnectToDatabase{
 
             return result
         }catch(e:any){
-            throw new Error(`Error fetching orders by month: ${e.message || e}`)
+            throw new Error(`Erro ao buscar pedidos por mês: ${e.message || e}`)
         }
     }
 
@@ -282,7 +282,7 @@ export default class OrderData extends ConnectToDatabase{
                 })
 
         }catch(e:any){
-            throw new Error(`Error fetching active orders: ${e.message || e}`)
+            throw new Error(`Erro ao buscar pedidos ativos: ${e.message || e}`)
         }
     }
 
@@ -332,7 +332,7 @@ export default class OrderData extends ConnectToDatabase{
                 .where({ client, provider: providerId })
                 .whereNull('archived_at')
         }catch(e:any){
-            throw new Error(`Error fetching client orders: ${e.message || e}`)
+            throw new Error(`Erro ao buscar pedidos do cliente: ${e.message || e}`)
         }
     }
 
@@ -368,7 +368,7 @@ export default class OrderData extends ConnectToDatabase{
                 .where({ client, state: 'FINISHED' })
 
         }catch(e:any){
-            throw new Error(`Error fetching finished orders: ${e.message || e}`)
+            throw new Error(`Erro ao buscar pedidos concluídos: ${e.message || e}`)
         }
     }
         
@@ -556,7 +556,7 @@ export default class OrderData extends ConnectToDatabase{
 
         }catch(e:any){
             if(e instanceof AppError) throw e
-            throw new Error(`Error marking order as finished: ${e.message || e}`)
+            throw new Error(`Erro ao marcar o pedido como concluído: ${e.message || e}`)
         }
     }
 
@@ -576,7 +576,7 @@ export default class OrderData extends ConnectToDatabase{
 
         }catch(e:any){
             if(e instanceof AppError) throw e
-            throw new Error(`Error reverting order to requested: ${e.message || e}`)
+            throw new Error(`Erro ao reverter o pedido para solicitado: ${e.message || e}`)
         }
     }
 
@@ -591,7 +591,7 @@ export default class OrderData extends ConnectToDatabase{
 
 
         }catch(e:any){
-            throw new Error(`Error clearing finished order history: ${e.message || e}`)
+            throw new Error(`Erro ao limpar o histórico de pedidos concluídos: ${e.message || e}`)
         }
     }
 

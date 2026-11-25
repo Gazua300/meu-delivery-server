@@ -51,7 +51,7 @@ export default class CustomerNotificationData extends ConnectToDatabase{
                 )
             }
         }catch(e:any){
-            throw new Error(`Failed to save notification: ${e.message || e}`)
+            throw new Error(`Falha ao salvar a notificação: ${e.message || e}`)
         }
     }
 

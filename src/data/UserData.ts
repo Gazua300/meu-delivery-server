@@ -34,7 +34,7 @@ export default class UserData extends ConnectToDatabase{
                 password: user.getPassword()
             }) 
         } catch (error: any) {
-            throw new Error(`Failed to create primary database user: ${error.message || error}`)
+            throw new Error(`Falha ao criar o usuário principal no banco de dados: ${error.message || error}`)
         }
     }
 
@@ -54,7 +54,7 @@ export default class UserData extends ConnectToDatabase{
 
             return users
         } catch (error: any) {
-            throw new Error(`Failed to fetch users: ${error.message || error}`)
+            throw new Error(`Falha ao buscar usuários: ${error.message || error}`)
         }
     }
 
@@ -64,7 +64,7 @@ export default class UserData extends ConnectToDatabase{
             const [user] = await ConnectToDatabase.con(this.USER_TABLE).where({ id })
             return user
         } catch (error: any) {
-            throw new Error(`Failed to fetch user by ID: ${error.message || error}`)
+            throw new Error(`Falha ao buscar usuário pelo ID: ${error.message || error}`)
         }
     }
 
@@ -80,7 +80,7 @@ export default class UserData extends ConnectToDatabase{
 
             return user
         } catch (error: any) {
-            throw new Error(`Failed to fetch user profile: ${error.message || error}`)
+            throw new Error(`Falha ao buscar o perfil do usuário: ${error.message || error}`)
         }
     }
 
@@ -123,7 +123,7 @@ export default class UserData extends ConnectToDatabase{
 
             return user
         } catch (error: any) {
-            throw new Error(`Failed to fetch user by email: ${error.message || error}`)
+            throw new Error(`Falha ao buscar usuário pelo e-mail: ${error.message || error}`)
         }
     }
 
@@ -136,7 +136,7 @@ export default class UserData extends ConnectToDatabase{
 
             return user
         } catch (error: any) {
-            throw new Error(`Failed to fetch user by phone: ${error.message || error}`)
+            throw new Error(`Falha ao buscar usuário pelo telefone: ${error.message || error}`)
         }
     }
 
@@ -151,7 +151,7 @@ export default class UserData extends ConnectToDatabase{
                     expires_at: new Date(Date.now() + 15 * 60 * 1000)
                 })
         } catch (error: any) {
-            throw new Error(`Failed to save reset token: ${error.message || error}`)
+            throw new Error(`Falha ao salvar o token de redefinição: ${error.message || error}`)
         }
     }   
     
@@ -162,7 +162,7 @@ export default class UserData extends ConnectToDatabase{
                 .update({ password: newPasswordHash })
                 .where({ id })
         } catch (error: any) {
-            throw new Error(`Failed to update password: ${error.message || error}`)
+            throw new Error(`Falha ao atualizar a senha: ${error.message || error}`)
         }
     }
 
@@ -173,7 +173,7 @@ export default class UserData extends ConnectToDatabase{
                 .del()
                 .where({ id })
         } catch (error: any) {
-            throw new Error(`Failed to clear reset token: ${error.message || error}`)
+            throw new Error(`Falha ao limpar o token de redefinição: ${error.message || error}`)
         }
     }
 
@@ -192,7 +192,7 @@ export default class UserData extends ConnectToDatabase{
                 })
                 .where({ id })
         } catch (error: any) {
-            throw new Error(`Failed to update address: ${error.message || error}`)
+            throw new Error(`Falha ao atualizar o endereço: ${error.message || error}`)
         }
     }
 
@@ -203,7 +203,7 @@ export default class UserData extends ConnectToDatabase{
                 .update({ username, email, phone })
                 .where({ id })
         } catch (error: any) {
-            throw new Error(`Failed to update user profile: ${error.message || error}`)
+            throw new Error(`Falha ao atualizar o perfil do usuário: ${error.message || error}`)
         }
     }
 
@@ -215,7 +215,7 @@ export default class UserData extends ConnectToDatabase{
                 .where({ client, state: 'REQUESTED' })
 
         }catch(e:any){
-            throw new Error(`Error fetching active orders: ${e.message || e}`)
+            throw new Error(`Erro ao buscar pedidos ativos: ${e.message || e}`)
         }
     }
         
@@ -231,7 +231,7 @@ export default class UserData extends ConnectToDatabase{
                 await trx(this.USER_TABLE).del().where({ id: userId })
             })
         } catch (error: any) {
-            throw new Error(`Failed to delete user and associated orders: ${error.message || error}`)
+            throw new Error(`Falha ao excluir o usuário e os pedidos associados: ${error.message || error}`)
         }
     }
 
@@ -246,7 +246,7 @@ export default class UserData extends ConnectToDatabase{
                 await trx(this.USER_TABLE).del().where({ email })
             })
         } catch (error: any) {
-            throw new Error(`Failed to delete user and associated orders: ${error.message || error}`)
+            throw new Error(`Falha ao excluir o usuário e os pedidos associados: ${error.message || error}`)
         }
     }
 }

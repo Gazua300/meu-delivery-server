@@ -13,7 +13,7 @@ export default class CategoriesBusiness{
         const categories = await this.categoriesData.getCategoryStatistics(providerId)
         
         if(categories.length === 0){
-            throw new AppError(404, 'There is no data to fetch statistics')
+            throw new AppError(404, 'Não há dados disponíveis para exibir as estatísticas')
         }
 
         return categories

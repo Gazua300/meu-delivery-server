@@ -40,7 +40,7 @@ export const uploadToCloudinary = async(req:Request, res:Response, next:NextFunc
         req.body.image = (result as any).secure_url
         next()
     }catch(e){
-        console.error('An error occurred while sending image to cloudinary:', e)
-        res.status(500).json({ error: 'Error uploading image.' })
+        console.error('Ocorreu um erro ao enviar a imagem para o Cloudinary:', e)
+        res.status(500).json({ error: 'Erro ao enviar a imagem.' })
     }
 }

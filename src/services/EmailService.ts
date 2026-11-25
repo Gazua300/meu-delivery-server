@@ -17,19 +17,19 @@ export default class EmailService{
         const customertUrl = process.env.CUSTOMER_CLIENT_URL
 
         const info = await this.transporter.sendMail({
-            from: 'My Delivery app',
+            from: 'Aplicativo Meu Delivery',
             to: email,
-            subject: 'Password reset request',
+            subject: 'Solicitação de redefinição de senha',
             html: `
-                <h2>Password Reset</h2>
-                <p><a href="${customertUrl}/reset-request?anything=${token}" target="_blank">Clique here</a> to register a new password</p>
-                <p>This code expires in 15 minutes</p>
+                <h2>Redefinição de senha</h2>
+                <p><a href="${customertUrl}/reset-request?anything=${token}" target="_blank">Clique aqui</a> para cadastrar uma nova senha.</p>
+                <p>Este código expira em 15 minutos.</p>
             `
         })
         
         const previewUrl = nodemailer.getTestMessageUrl(info)
         if(!previewUrl){
-            throw new Error('No proview URL was generated')
+            throw new Error('Não foi possível gerar a pré-visualização do e-mail.')
         }
 
         return previewUrl
@@ -40,19 +40,19 @@ export default class EmailService{
         const providerUrl = process.env.PROVIDER_CLIENT_URL
 
         const info = await this.transporter.sendMail({
-            from: 'My Delivery Provider app',
+            from: 'Aplicativo Meu Delivery Provedor',
             to: email,
-            subject: 'Password reset request',
+            subject: 'Solicitação de redefinição de senha',
             html: `
-                <h2>Password Reset</h2>
-                <p><a href="${providerUrl}/reset-request?anything=${token}" target="_blank">Clique here</a> to register a new password</p>
-                <p>This code expires in 15 minutes</p>
+                <h2>Redefinição de senha</h2>
+                <p><a href="${providerUrl}/reset-request?anything=${token}" target="_blank">Clique aqui</a> para cadastrar uma nova senha.</p>
+                <p>Este código expira em 15 minutos.</p>
             `
         })
         
         const previewUrl = nodemailer.getTestMessageUrl(info)
         if(!previewUrl){
-            throw new Error('No proview URL was generated')
+            throw new Error('Não foi possível gerar a pré-visualização do e-mail.')
         }
 
         return previewUrl

@@ -14,7 +14,7 @@ export default class StatisticBusiness{
         const restStatistics = await this.statisticsData.getStatisticsPanel(providerId)
         
         if(restStatistics.length === 0){
-            throw new AppError(404, 'There is no data to fetch statistics')
+            throw new AppError(404, 'Não há dados disponíveis para exibir as estatísticas')
         }
 
         return restStatistics
@@ -25,7 +25,7 @@ export default class StatisticBusiness{
         const revenueByMonth = await this.statisticsData.getMonthlyStatistics(providerId)
         
         if(revenueByMonth.length === 0){
-            throw new AppError(401, 'There is no data to fetch statistics by month')
+            throw new AppError(401, 'Não há dados disponíveis para exibir as estatísticas mensais')
         }
 
         return revenueByMonth
@@ -36,7 +36,7 @@ export default class StatisticBusiness{
         const growthPercentage = await this.statisticsData.statisticsPanelForAnalizes(providerId)
         
         if(growthPercentage.length === 0){
-            throw new AppError(401, 'There is no data to fetch growth percentage of statistics ')
+            throw new AppError(401, 'Não há dados disponíveis para exibir a porcentagem de crescimento das estatísticas')
         }
 
         return growthPercentage

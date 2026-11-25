@@ -3,7 +3,9 @@ import { randomUUID as uuidv4 } from "crypto"
 import Restaurant from "../model/Restaurant"
 import Product from "../model/Products"
 import { ProductModel, RestaurantModel, OrderModel } from "../model/typesAndInterfaces"
+import { AppError } from "../services/Authentication"
 import CustomerNotificationData from "./CustomerNotificationData"
+
 
 
 
@@ -283,15 +285,57 @@ export default class RestaurantData extends ConnectToDatabase{
     public deleteProduct = async(product:ProductModel):Promise<void>=>{
         try{
 
-            const [productProvider] = await ConnectToDatabase.con<RestaurantModel>(this.RESTAURANT_TABLE).where({ id: product.provider})
+            const [productProvider] = await ConnectToDatabase.con<RestaurantModel>(
+                this.RESTAURANT_TABLE
+            ).where({ id: product.provider})
 
-            await ConnectToDatabase.con(this.PRODUCT_TABLE).where({ id: product.id }).del()
+            await ConnectToDatabase.con.transaction(async(trx)=>{
+                const currentProduct = await trx(this.PRODUCT_TABLE)
+                    .where({
+                        id: product.id,
+                        provider: product.provider
+                    })
+                    .forUpdate()
+                    .first('id')
+
+                if(!currentProduct){
+                    throw new AppError(404, 'Produto não encontrado')
+                }
+
+                const pendingOrder = await trx(this.ORDER_TABLE)
+                    .where({
+                        productid: product.id,
+                        provider: product.provider,
+                        state: 'REQUESTED'
+                    })
+                    .first('id')
+
+                if(pendingOrder){
+                    throw new AppError(
+                        409,
+                        'Não é possível remover este produto enquanto houver pedidos solicitados associados a ele.'
+                    )
+                }
+
+                await trx(this.PRODUCT_TABLE)
+                    .where({
+                        id: product.id,
+                        provider: product.provider
+                    })
+                    .delete()
+            })
+
             await new CustomerNotificationData().saveCustomerNofitication(
-                `${product.name} foi removido por ${productProvider.name}`,
+                `${product.name} froi removido por ${productProvider.name}`,
                 product.provider
             )
-        }catch(e:any){
-            throw new Error(`Erro ao deletar produto: ${e.message || e}`)
+        }catch(e:unknown){
+            if(e instanceof AppError){
+                throw e
+            }
+            
+            const message = e instanceof Error ? e.message : String(e)
+            throw new Error(`Erro ao deletar produto: ${message}`)
         }
     }
 

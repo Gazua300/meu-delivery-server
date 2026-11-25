@@ -36,7 +36,7 @@ export default class Restaurant extends ConnectToDatabase{
                 this.id
             )
         }catch(e:any){
-            throw new Error(`Failed to save restaurant: ${e.message} || e`)
+            throw new Error(`Falha ao salvar o estabelecimento: ${e.message} || e`)
         }
     }
 }
