@@ -5,7 +5,7 @@ import UserData from "../data/UserData";
 import Services from "../services/Authentication";
 import TokenService from "../services/TokenService";
 import EmailService from "../services/EmailService";
-import { /* requireSignupEnabled, */ requireDeleteAccountEnabled } from "../middleware/signupGate";
+import { requireSignupEnabled, requireDeleteAccountEnabled } from "../middleware/signupGate";
 
 export const userRouter = Router();
 
@@ -20,7 +20,7 @@ const userController = new UserController(userBusiness, services);
 // ==========================================
 // Authentication & Password Routes
 // ==========================================
-userRouter.post("/signup", userController.signup);
+userRouter.post("/signup", requireSignupEnabled("ENABLE_CUSTOMER_SIGNUP"), userController.signup);
 
 /**
  * @openapi

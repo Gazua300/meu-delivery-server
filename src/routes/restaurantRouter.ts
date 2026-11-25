@@ -7,7 +7,7 @@ import RestaurantData from "../data/RestaurantData";
 import Services from "../services/Authentication";
 import TokenService from "../services/TokenService";
 import EmailService from "../services/EmailService";
-import { /* requireSignupEnabled, */ requireDeleteAccountEnabled } from "../middleware/signupGate";
+import { requireSignupEnabled, requireDeleteAccountEnabled } from "../middleware/signupGate";
 
 export const restaurantRouter = Router();
 
@@ -23,7 +23,7 @@ const restaurantController = new RestaurantController(restaurantBusiness, servic
 // Merchant Restaurant Authentication & Profile
 // ==========================================
 
-restaurantRouter.post("/signup", uploadSignupImage.single('image'), replicatedSignupUpload, restaurantController.signupRestaurant);
+restaurantRouter.post("/signup", uploadSignupImage.single('image'), replicatedSignupUpload, requireSignupEnabled("ENABLE_PROVIDER_SIGNUP"), restaurantController.signupRestaurant);
 
 /**
  * @openapi
